@@ -1,5 +1,7 @@
 # 💱 Conversor de Monedas - Challenge ONE
 
+> 📦 **Repositorio:** `alura-challenge-conversor-moneda` · Challenge de **Alura Latam** · Programa **Oracle Next Education (ONE)**
+
 ¡Bienvenido al **Conversor de Monedas V2**! Esta es una aplicación de consola en Java desarrollada como parte del desafío "Challenge ONE" de Alura Latam. Permite a los usuarios realizar conversiones de divisas en tiempo real consumiendo la [ExchangeRate-API](https://www.exchangerate-api.com/).
 
 ## ✨ Características Principales
@@ -30,15 +32,16 @@ Más allá de los requisitos básicos del desafío, esta "V2" incluye múltiples
 
 ### Pasos
 1. Clona este repositorio ejecutando en tu terminal:
-   `git clone https://github.com/Neo236/Conversor-de-Moneda-Challenge-ONE.git`
+   `git clone https://github.com/Neo236/alura-challenge-conversor-moneda.git`
 
-2. Asegúrate de que la biblioteca `Gson` (v2.10.1 o superior) esté agregada a tu proyecto (mediante Maven o descargando el archivo `.jar` en tu carpeta `lib`).
+2. El proyecto usa **Gradle** con layout estándar (`src/main`, `src/test`); las dependencias (Gson, SLF4J/Logback, JUnit 5, Mockito) se resuelven automáticamente.
 
 3. **¡Importante! Configura la Variable de Entorno:**
    Para proteger tus credenciales, el código no contiene la API Key en texto plano. Debes crear una variable de entorno en tu sistema o en la configuración de ejecución de tu IDE llamada `EXCHANGE_RATE_API_KEY` con tu clave personal.
    *Ejemplo en Linux/WSL:* `export EXCHANGE_RATE_API_KEY="tu_clave_aqui"`
+   Si no está configurada, la aplicación te pedirá la clave por consola al iniciar.
 
-4. Compila y ejecuta la clase `Main.java`.
+4. Compila y ejecuta con `gradle run` (o la clase `Main.java` desde tu IDE). Para generar el jar ejecutable: `gradle jar` y luego `run.bat`.
 
 ## 🎮 Cómo usarlo
 
