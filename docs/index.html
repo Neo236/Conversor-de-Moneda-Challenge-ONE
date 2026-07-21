@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversor de Moneda · demo en vivo</title>
+<meta name="description" content="Demo web de una app de consola en Java: reproduce una sesión real del Conversor de Moneda, con sus colores, sin instalar nada.">
+<style>
+  :root {
+    --bg: #eef1f5;
+    --surface: #ffffff;
+    --text: #0d1117;
+    --muted: #57606a;
+    --border: #d5dbe2;
+    --accent: #0b6e83;
+    --accent-soft: #0b6e8318;
+    --shadow: 0 24px 60px -28px rgba(13, 17, 23, .45);
+
+    /* La terminal es de mundo propio: siempre oscura, en los dos temas. */
+    --term-bg: #0d1117;
+    --term-bar: #161b22;
+    --term-border: #30363d;
+    --term-text: #c9d1d9;
+    --term-dim: #8b949e;
+    --t-c: #66d9e8;
+    --t-g: #8ce99a;
+    --t-y: #ffd43b;
+    --t-b: #74c0fc;
+    --t-typed: #f0f6fc;
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Code", "Segoe UI Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #010409;
+      --surface: #0d1117;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --border: #21262d;
+      --accent: #56d4e8;
+      --accent-soft: #56d4e820;
+      --shadow: 0 24px 60px -24px rgba(0, 0, 0, .75);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f5; --surface: #ffffff; --text: #0d1117; --muted: #57606a;
+    --border: #d5dbe2; --accent: #0b6e83; --accent-soft: #0b6e8318;
+    --shadow: 0 24px 60px -28px rgba(13, 17, 23, .45);
+  }
+  :root[data-theme="dark"] {
+    --bg: #010409; --surface: #0d1117; --text: #e6edf3; --muted: #8b949e;
+    --border: #21262d; --accent: #56d4e8; --accent-soft: #56d4e820;
+    --shadow: 0 24px 60px -24px rgba(0, 0, 0, .75);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: clamp(2.5rem, 6vw, 5rem) clamp(1.1rem, 4vw, 2rem) 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .intro { display: flex; flex-direction: column; gap: .7rem; }
+  .eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: .78rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.1rem, 6vw, 3.1rem);
+    line-height: 1.05;
+    letter-spacing: -.02em;
+    font-weight: 800;
+    text-wrap: balance;
+  }
+  .lede {
+    margin: 0;
+    max-width: 54ch;
+    font-size: 1.06rem;
+    color: var(--muted);
+  }
+  .lede b { color: var(--text); font-weight: 600; }
+
+  /* ---- Terminal ---- */
+  .terminal {
+    margin: 0;
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: .5rem;
+    height: 40px;
+    padding: 0 14px;
+    background: var(--term-bar);
+    border-bottom: 1px solid var(--term-border);
+  }
+  .dots { display: flex; gap: 8px; }
+  .dots i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .dots i:nth-child(1) { background: #ff5f57; }
+  .dots i:nth-child(2) { background: #febc2e; }
+  .dots i:nth-child(3) { background: #28c840; }
+  .bar .name {
+    grid-column: 2;
+    font-family: var(--mono);
+    font-size: .8rem;
+    color: var(--term-dim);
+    white-space: nowrap;
+  }
+
+  .body {
+    margin: 0;
+    padding: 16px 18px;
+    height: min(62vh, 620px);
+    overflow: auto;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--term-text);
+    scrollbar-width: thin;
+    scrollbar-color: var(--term-border) transparent;
+  }
+  .body::-webkit-scrollbar { width: 10px; height: 10px; }
+  .body::-webkit-scrollbar-thumb { background: var(--term-border); border-radius: 6px; }
+  .ln { white-space: pre; min-height: 1.5em; }
+  .t-c { color: var(--t-c); }
+  .t-g { color: var(--t-g); }
+  .t-y { color: var(--t-y); }
+  .t-b { color: var(--t-b); }
+  .t-d { color: var(--term-text); }
+  .prompt { color: var(--term-dim); }
+  .typed { color: var(--t-typed); font-weight: 600; }
+  .cursor {
+    display: inline-block;
+    width: .58em;
+    height: 1.05em;
+    margin-left: 1px;
+    background: var(--t-c);
+    vertical-align: text-bottom;
+    animation: blink 1.05s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---- Controles ---- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem .8rem;
+    margin-top: -.6rem;
+  }
+  button {
+    font-family: var(--sans);
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .5rem .9rem;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .caption {
+    flex: 1 1 16rem;
+    margin: 0;
+    font-size: .84rem;
+    color: var(--muted);
+  }
+  .controls-note {
+    margin: 0;
+    font-size: .84rem;
+    color: var(--muted);
+  }
+
+  /* ---- Cómo correrlo ---- */
+  .run {
+    border-top: 1px solid var(--border);
+    padding-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+  }
+  .run h2 { margin: 0; font-size: 1.3rem; letter-spacing: -.01em; }
+  .run p { margin: 0; color: var(--muted); max-width: 60ch; }
+  .run a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .run a:hover { text-decoration: underline; }
+  pre.cmd {
+    margin: .2rem 0;
+    padding: 1rem 1.1rem;
+    background: var(--term-bg);
+    color: #e6edf3;
+    border: 1px solid var(--term-border);
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: .88rem;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  pre.cmd .var { color: var(--t-y); }
+  pre.cmd .cmd-c { color: var(--t-g); }
+
+  footer {
+    margin-top: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: .9rem;
+    color: var(--muted);
+  }
+  footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="intro">
+    <p class="eyebrow">Challenge Alura · Oracle Next Education</p>
+    <h1>Conversor de Moneda</h1>
+    <p class="lede">Una aplicación de consola en Java que convierte divisas en tiempo real.
+      Acá la ves correr <b>con todos sus colores</b>, sin instalar nada. En la terminal de
+      Windows esos colores no aparecen; en el navegador, sí.</p>
+  </header>
+
+  <figure class="terminal">
+    <div class="bar">
+      <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="name">conversor — sesión de terminal</span>
+    </div>
+    <div class="body" id="term" role="img"
+         aria-label="Reproducción de una sesión real del Conversor de Moneda: dos conversiones en vivo — 250 dólares a reales y 100 euros a pesos argentinos — seguidas del historial de conversiones y la salida del programa."></div>
+  </figure>
+
+  <div class="controls">
+    <button id="btnPlay" type="button">⏸ Pausar</button>
+    <button id="btnReset" type="button">↻ Reiniciar</button>
+    <p class="caption">Sesión real capturada contra ExchangeRate-API — las cotizaciones son las del 16 de julio de 2026.</p>
+    <p class="controls-note" hidden>Animación desactivada según tus preferencias del sistema; abajo ves la sesión completa.</p>
+  </div>
+
+  <section class="run">
+    <h2>¿Querés correrla vos?</h2>
+    <p>Hace falta un JDK 21. Gradle no: lo baja el <i>wrapper</i>.</p>
+    <pre class="cmd"><span class="var">export EXCHANGE_RATE_API_KEY="tu_clave"</span>
+<span class="cmd-c">./gradlew run</span></pre>
+    <p>La clave gratuita se saca en
+      <a href="https://www.exchangerate-api.com/" target="_blank" rel="noopener">exchangerate-api.com</a>.
+      Si no la definís, la app te la pide por teclado y la usa solo en memoria: nunca se escribe a disco.</p>
+  </section>
+
+  <footer>
+    <a href="https://github.com/Neo236/Conversor-de-Moneda-Challenge-ONE" target="_blank" rel="noopener">Ver el código en GitHub</a>
+    &nbsp;·&nbsp; Desarrollado por Lautaro Sebastian Mambrin (Neo236)
+  </footer>
+</main>
+
+<script>
+(function () {
+  var C = 't-c', G = 't-g', Y = 't-y', B = 't-b', D = 't-d';
+  var SES = [
+    { o: [[C, '***************************************************']] },
+    { o: [[G, 'Bienvenido al Conversor de Moneda V2 =)']] },
+    { o: [[C, '***************************************************']] },
+    { gap: 1 },
+    { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+    { o: [[Y, "[Comandos: 'l' (lista) | 'h' (historial) | 'salir']"]] },
+    { in: 'USD' },
+    { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
+    { o: [[Y, "[Comandos: 'l' (lista) | 'h' (historial) | 'salir']"]] },
+    { in: 'BRL' },
+    { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
+    { o: [[Y, "[Comandos: 'l' (lista) | 'h' (historial) | 'salir']"]] },
+    { in: '250' },
+    { pause: 650 },
+    { o: [[C, 'Procesando conversión...']] },
+    { o: [[C, '---------------------------------------------------']] },
+    { o: [[Y, 'Tasa actual: 1 USD = 5.0766 BRL']] },
+    { o: [[G, 'RESULTADO: 250 [USD] equivale a =>>> 1269.15 [BRL]']] },
+    { o: [[C, '---------------------------------------------------']] },
+    { gap: 1 },
+    { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+    { in: 'EUR' },
+    { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
+    { in: 'ARS' },
+    { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
+    { in: '100' },
+    { pause: 650 },
+    { o: [[C, 'Procesando conversión...']] },
+    { o: [[C, '---------------------------------------------------']] },
+    { o: [[Y, 'Tasa actual: 1 EUR = 1689.1870 ARS']] },
+    { o: [[G, 'RESULTADO: 100 [EUR] equivale a =>>> 168918.7 [ARS]']] },
+    { o: [[C, '---------------------------------------------------']] },
+    { gap: 1 },
+    { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+    { in: 'h' },
+    { gap: 1 },
+    { o: [[C, '===================================================']] },
+    { o: [[Y, '                HISTORIAL DE CONVERSIONES']] },
+    { o: [[C, '===================================================']] },
+    { o: [[D, '  [2026-07-16 15:48:53] 100 EUR -> 168918.7 ARS']] },
+    { o: [[D, '  [2026-07-16 15:48:52] 250 USD -> 1269.15 BRL']] },
+    { o: [[C, '---------------------------------------------------']] },
+    { o: [[G, '               Página 1 de 1']] },
+    { o: [[C, '---------------------------------------------------']] },
+    { o: [[Y, "[Comandos: 's' (siguiente) | 'a' (anterior) | 'v' (volver)]"]] },
+    { in: 'v' },
+    { gap: 1 },
+    { o: [[C, '--- Volviendo a la operación actual ---']] },
+    { gap: 1 },
+    { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+    { in: 'salir' },
+    { gap: 1 },
+    { o: [[G, 'Cerrando sistema... ¡Hasta luego!']] }
+  ];
+
+  var term = document.getElementById('term');
+  var btnPlay = document.getElementById('btnPlay');
+  var btnReset = document.getElementById('btnReset');
+  var note = document.querySelector('.controls-note');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var runId = 0, paused = false, finished = false;
+
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function makeLine() { var d = document.createElement('div'); d.className = 'ln'; term.appendChild(d); return d; }
+  function addSpans(d, spans) {
+    spans.forEach(function (p) {
+      var s = document.createElement('span');
+      s.className = p[0];
+      s.textContent = p[1];
+      d.appendChild(s);
+    });
+  }
+  function scrollDown() { term.scrollTop = term.scrollHeight; }
+
+  function renderStatic() {
+    term.textContent = '';
+    SES.forEach(function (ev) {
+      if (ev.pause) return;
+      var d = makeLine();
+      if (ev.gap) { d.textContent = ' '; return; }
+      if (ev.o) { addSpans(d, ev.o); return; }
+      if (ev.in !== undefined) { addSpans(d, [['prompt', '> '], ['typed', ev.in]]); }
+    });
+    term.scrollTop = 0;
+  }
+
+  function updateBtn() {
+    if (reduce) { btnPlay.hidden = true; btnReset.hidden = true; return; }
+    btnPlay.textContent = finished ? '↻ Reproducir de nuevo' : (paused ? '▶ Reanudar' : '⏸ Pausar');
+  }
+
+  async function play() {
+    var my = ++runId;
+    paused = false; finished = false;
+    updateBtn();
+    term.textContent = '';
+    for (var i = 0; i < SES.length; i++) {
+      var ev = SES[i];
+      if (my !== runId) return;
+      while (paused) { if (my !== runId) return; await delay(100); }
+
+      if (ev.pause) { await delay(ev.pause); continue; }
+      if (ev.gap) { makeLine().textContent = ' '; scrollDown(); await delay(60); continue; }
+      if (ev.o) { addSpans(makeLine(), ev.o); scrollDown(); await delay(48); continue; }
+
+      if (ev.in !== undefined) {
+        var d = makeLine();
+        addSpans(d, [['prompt', '> ']]);
+        var typed = document.createElement('span'); typed.className = 'typed'; d.appendChild(typed);
+        var cur = document.createElement('span'); cur.className = 'cursor'; d.appendChild(cur);
+        scrollDown();
+        await delay(240);
+        for (var k = 0; k < ev.in.length; k++) {
+          if (my !== runId) return;
+          while (paused) { if (my !== runId) return; await delay(100); }
+          typed.textContent += ev.in[k];
+          scrollDown();
+          await delay(75 + Math.random() * 70);
+        }
+        await delay(320);
+        cur.remove();
+      }
+    }
+    var last = makeLine();
+    var endCur = document.createElement('span'); endCur.className = 'cursor'; last.appendChild(endCur);
+    scrollDown();
+    finished = true;
+    updateBtn();
+  }
+
+  btnPlay.addEventListener('click', function () {
+    if (finished) { play(); return; }
+    paused = !paused;
+    updateBtn();
+  });
+  btnReset.addEventListener('click', function () { play(); });
+
+  if (reduce) {
+    renderStatic();
+    if (note) note.hidden = false;
+    updateBtn();
+  } else {
+    play();
+  }
+})();
+</script>
+</body>
+</html>

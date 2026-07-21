@@ -1,0 +1,22 @@
+services:
+  conversor:
+    build:
+      context: .
+      # La imagen de consola: la etapa web queda para docker-compose.web.yml.
+      target: runtime
+    image: conversor:local
+    # El menú se maneja por teclado, así que hay que arrancarlo con:
+    #   docker compose run --rm conversor
+    # (con `up` la entrada estándar no queda conectada).
+    stdin_open: true
+    tty: true
+    environment:
+      # Si no la definís, la app te pide la API Key por teclado.
+      # Clave gratis en https://www.exchangerate-api.com/
+      EXCHANGE_RATE_API_KEY: ${EXCHANGE_RATE_API_KEY:-}
+    volumes:
+      # Persiste el historial de conversiones fuera del contenedor (opcional).
+      - conversor-datos:/data
+
+volumes:
+  conversor-datos:

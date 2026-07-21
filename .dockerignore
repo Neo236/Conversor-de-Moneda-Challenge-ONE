@@ -1,0 +1,13 @@
+.git/
+.github/
+.gradle/
+build/
+bin/
+out/
+.idea/
+docs/
+*.iml
+*.log
+logs/
+historial.json
+README.md

@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+
+# --- Etapa de build: compila y arma la distribución con su script de arranque ---
+FROM gradle:8.10-jdk21 AS build
+WORKDIR /src
+
+# Primero solo los archivos de build: si no cambian, esta capa (y la descarga de
+# dependencias) se reutiliza entre builds.
+COPY settings.gradle build.gradle ./
+RUN gradle dependencies --no-daemon --quiet || true
+
+COPY src ./src
+RUN gradle installDist --no-daemon --quiet
+
+# --- Etapa de runtime: solo el JRE y la app, sin Gradle ni el JDK ---
+FROM eclipse-temurin:21-jre AS runtime
+
+# Usuario sin privilegios: la app no necesita root para nada.
+RUN groupadd -r conversor && useradd -r -g conversor -m -d /home/conversor conversor
+
+COPY --from=build /src/build/install/conversor /opt/conversor
+
+# WORKDIR escribible: acá se crean historial.json y logs/ en tiempo de ejecución.
+WORKDIR /data
+RUN chown -R conversor:conversor /data
+USER conversor
+
+# La API Key se pasa por entorno (-e EXCHANGE_RATE_API_KEY=...). Si falta, la app la
+# pide por teclado y la usa solo en memoria.
+ENTRYPOINT ["/opt/conversor/bin/conversor"]
+
+# --- Etapa web: la misma app, envuelta en una terminal de navegador (ttyd) ---
+# Cada pestaña que se conecta corre su propia instancia real del Conversor, con sus
+# colores ANSI y su teclado. Pensada para auto-hostearla y que cualquiera la pruebe
+# sin instalar Java. La API Key vive del lado del servidor y nunca llega al navegador.
+FROM runtime AS web
+USER root
+
+# ttyd: un único binario estático, sin dependencias que instalar en la imagen.
+ADD https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 /usr/local/bin/ttyd
+COPY docker/serve.sh /usr/local/bin/serve.sh
+COPY docker/web-run.sh /opt/conversor/web-run.sh
+RUN chmod +x /usr/local/bin/ttyd /usr/local/bin/serve.sh /opt/conversor/web-run.sh
+
+EXPOSE 7681
+USER conversor
+ENTRYPOINT ["/usr/local/bin/serve.sh"]
