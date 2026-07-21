@@ -1,6 +1,7 @@
 #!/bin/sh
 # Sirve el Conversor como una terminal web interactiva (ttyd + xterm.js), detrás de
-# nginx bajo /terminal/. La paleta va afinada a la identidad teal del proyecto.
+# nginx bajo /terminal/. La paleta va afinada a la identidad "billete" (verde intaglio)
+# de la portada, para que la terminal viva combine con el marco.
 #
 # ttyd corre 'web-run.sh' directamente —no un shell—, así que quien entra solo puede
 # usar la app: no hay forma de escaparse a una consola del contenedor.
@@ -16,5 +17,5 @@ exec ttyd \
   -t cursorBlink=true \
   -t disableLeaveAlert=true \
   -t 'titleFixed=Conversor de Moneda — en vivo' \
-  -t 'theme={"background":"#0c1f18","foreground":"#d3e2ce","cursor":"#4fd1b0","cursorAccent":"#0c1f18","selectionBackground":"#1f3d30","black":"#0c1f18","red":"#d98a6a","green":"#3fbf85","yellow":"#c99a5a","blue":"#6fb0a0","magenta":"#b98fb0","cyan":"#5fd0a8","white":"#d3e2ce","brightBlack":"#4a6357","brightRed":"#e8a487","brightGreen":"#66d29e","brightYellow":"#dcb87a","brightBlue":"#8fc4b6","brightMagenta":"#cfabc7","brightCyan":"#83e0c0","brightWhite":"#eef4ea"}' \
+  -t 'theme={"background":"#0E2620","foreground":"#c9d1d9","cursor":"#66d9e8","cursorAccent":"#0E2620","selectionBackground":"#2C4A3B","black":"#0E2620","red":"#e5806b","green":"#8ce99a","yellow":"#ffd43b","blue":"#74c0fc","magenta":"#b98fb0","cyan":"#66d9e8","white":"#c9d1d9","brightBlack":"#8b949e","brightRed":"#f0a08c","brightGreen":"#a0f0ad","brightYellow":"#ffe08a","brightBlue":"#96d0ff","brightMagenta":"#cfabc7","brightCyan":"#83e0c0","brightWhite":"#f0f6fc"}' \
   /opt/conversor/web-run.sh
