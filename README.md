@@ -1,57 +1,134 @@
-# 💱 Conversor de Monedas - Challenge ONE
+# Conversor de Monedas
 
-> 📦 **Repositorio:** `alura-challenge-conversor-moneda` · Challenge de **Alura Latam** · Programa **Oracle Next Education (ONE)**
+[![CI](https://github.com/Neo236/Conversor-de-Moneda-Challenge-ONE/actions/workflows/ci.yml/badge.svg)](https://github.com/Neo236/Conversor-de-Moneda-Challenge-ONE/actions/workflows/ci.yml)
 
-¡Bienvenido al **Conversor de Monedas V2**! Esta es una aplicación de consola en Java desarrollada como parte del desafío "Challenge ONE" de Alura Latam. Permite a los usuarios realizar conversiones de divisas en tiempo real consumiendo la [ExchangeRate-API](https://www.exchangerate-api.com/).
+Aplicación de consola en Java que convierte divisas con la cotización del momento, contra la
+[ExchangeRate-API](https://www.exchangerate-api.com/). Elegís las monedas y la cantidad, y te
+da el resultado y la tasa; cada conversión queda en un historial que persiste entre sesiones,
+y los comandos (lista de monedas, historial, salir) responden en cualquier momento sin perder
+la operación en curso.
 
-## ✨ Características Principales
+Salió del challenge de **Alura Latam** (programa Oracle Next Education).
 
-Más allá de los requisitos básicos del desafío, esta "V2" incluye múltiples características avanzadas orientadas a la experiencia del usuario y las mejores prácticas de desarrollo:
+<img src="docs/demo.svg" alt="Sesión del Conversor: dos conversiones en vivo (USD a BRL y EUR a ARS) con la tasa del momento, el historial paginado y los comandos" width="70%">
 
-* **Conversión en Tiempo Real:** Soporte para más de 150 monedas mundiales con tasas exactas de hasta 6 decimales.
-* **Interfaz CLI Interactiva:** Sistema de menús ininterrumpidos tipo "Máquina de Estados". No necesitas reiniciar el programa para cambiar de opinión.
-* **Atajos de Teclado (Comandos Globales):** Navega rápidamente escribiendo `l` (lista), `h` (historial), o `salir` en cualquier momento de la ejecución.
-* **Paginación y Motor de Búsqueda:** ¿No quieres leer 160 monedas? La lista está paginada (15 ítems por vista) y cuenta con un comando `b` (buscar) para filtrar por nombre o código (ej. "Peso", "Euro").
-* **Historial Persistente y Paginado:** Cada conversión se guarda automáticamente con su marca de tiempo (`java.time`) en un archivo `historial.json` local. El historial completo se puede visualizar paginado de a 10 registros para no saturar la consola. ¡No pierdas tus registros al cerrar la app!
-* **Caché de Sesión Inteligente:** La lista de monedas se descarga de la API una sola vez y se guarda en memoria, ahorrando ancho de banda y cuota de peticiones.
-* **Seguridad y Manejo de Errores:** * La API Key está protegida mediante Variables de Entorno.
-    * Las entradas del usuario están sanitizadas contra letras o caracteres extraños en campos numéricos.
-    * Adaptación automática de comas a puntos para evitar errores de sintaxis en los decimales.
+**[Ver la demo en vivo →](https://neo236.github.io/Conversor-de-Moneda-Challenge-ONE/)**
 
-## 🛠️ Tecnologías Utilizadas
+Es una app de consola, así que sus colores no se ven en la terminal de Windows. La demo web
+reproduce una sesión real —tecleo incluido— para que se aprecien sin instalar nada.
 
-* **Java 21 (LTS) / 25:** Lenguaje principal. Usando la clase nativa `HttpClient` para las peticiones web.
-* **Gson (Google):** Para la serialización y deserialización de archivos JSON (Respuestas de la API y guardado del historial local).
-* **IntelliJ IDEA & WSL:** Entorno de desarrollo aislado.
+## Qué hace
 
-## ⚙️ Instalación y Configuración
+- Convierte entre más de 150 monedas con la cotización del momento.
+- Comandos globales: `l` (lista), `h` (historial) o `salir` en cualquier momento, sin perder
+  la operación en curso.
+- Lista de monedas paginada y con búsqueda por código o nombre (`b`).
+- Historial persistente: cada conversión se guarda en `historial.json` con su fecha y se
+  navega paginado, de la más reciente a la más vieja.
+- La lista de monedas se pide a la API una sola vez por sesión (caché).
 
-### Prerrequisitos
-1. Tener Java instalado en tu sistema (JDK 17 o superior).
-2. Obtener una API Key gratuita en [ExchangeRate-API](https://www.exchangerate-api.com/).
+## Cómo ejecutarlo
 
-### Pasos
-1. Clona este repositorio ejecutando en tu terminal:
-   `git clone https://github.com/Neo236/alura-challenge-conversor-moneda.git`
+Hace falta una API Key de ExchangeRate-API (gratis en
+[exchangerate-api.com](https://www.exchangerate-api.com/)). En todos los casos, si no definís
+la variable de entorno, la app te pide la clave por teclado y la usa solo en memoria: nunca se
+escribe a disco ni aparece en los logs.
 
-2. El proyecto usa **Gradle** con layout estándar (`src/main`, `src/test`); las dependencias (Gson, SLF4J/Logback, JUnit 5, Mockito) se resuelven automáticamente.
+**Terminal web, sin instalar nada.** La app se auto-hostea como una terminal de navegador con
+[`ttyd`](https://github.com/tsl0922/ttyd): cada pestaña que se conecta corre su propia
+instancia real, con sus colores y su teclado, contra la API en vivo. La clave vive solo del
+lado del servidor y nunca viaja al navegador.
 
-3. **¡Importante! Configura la Variable de Entorno:**
-   Para proteger tus credenciales, el código no contiene la API Key en texto plano. Debes crear una variable de entorno en tu sistema o en la configuración de ejecución de tu IDE llamada `EXCHANGE_RATE_API_KEY` con tu clave personal.
-   *Ejemplo en Linux/WSL:* `export EXCHANGE_RATE_API_KEY="tu_clave_aqui"`
-   Si no está configurada, la aplicación te pedirá la clave por consola al iniciar.
+```bash
+export EXCHANGE_RATE_API_KEY="tu_clave"
+docker compose -f docker-compose.web.yml up -d --build
+```
 
-4. Compila y ejecuta con `gradle run` (o la clase `Main.java` desde tu IDE). Para generar el jar ejecutable: `gradle jar` y luego `run.bat`.
+Después se abre en `http://IP-DEL-HOST:8091` desde cualquier dispositivo de la red.
 
-## 🎮 Cómo usarlo
+**Con Docker, sin instalar Java.**
 
-El programa te guiará paso a paso, pero siempre tendrás estos comandos a tu disposición:
-* `l` o `lista`: Abre el submenú de la base de datos de monedas.
-* `h` o `historial`: Abre tu historial completo de conversiones.
-* `salir`: Termina el programa de forma segura.
+```bash
+export EXCHANGE_RATE_API_KEY="tu_clave"
+docker compose run --rm conversor
+```
 
-**Dentro del submenú de Lista / Historial:**
-* `s` o `siguiente`: Avanza a la página siguiente.
-* `a` o `anterior`: Retrocede a la página anterior.
-* `b` o `buscar`: Filtra la base de datos por término (Solo disponible en Lista).
-* `v` o `volver`: Cierra el submenú y regresa exactamente a la operación donde estabas.
+Se usa `run` y no `up` porque el menú se maneja por teclado.
+
+**Con un JDK 21 local.** Gradle no hace falta: lo baja el wrapper.
+
+```bash
+export EXCHANGE_RATE_API_KEY="tu_clave"
+./gradlew run
+```
+
+Para armar una distribución con su script de arranque: `./gradlew installDist` y después
+`./build/install/conversor/bin/conversor`.
+
+## Comandos
+
+| En cualquier momento | |
+| --- | --- |
+| `l` / `lista` | Abre la lista de monedas |
+| `h` / `historial` | Abre el historial de conversiones |
+| `salir` | Termina el programa |
+
+| Dentro de una lista | |
+| --- | --- |
+| `s` / `siguiente` | Página siguiente |
+| `a` / `anterior` | Página anterior |
+| `b` / `buscar` | Filtra por término (solo en la lista de monedas) |
+| `v` / `volver` | Vuelve a donde estabas |
+
+## Tests
+
+```bash
+./gradlew test
+```
+
+50 tests, sin tocar la red: el `HttpClient` entra por constructor, así que las respuestas de
+la API están simuladas, y la interfaz se ejercita con un teclado y una salida de mentira.
+
+## Estructura
+
+```
+com.alura.conversor
+├── Main.java        Punto de entrada: arma las piezas
+├── api/             Cliente de ExchangeRate-API y sus respuestas
+├── historial/       Persistencia del historial en JSON
+└── ui/              Consola, paginador y flujo de la aplicación
+```
+
+## Decisiones de diseño
+
+**La plata es `BigDecimal`, no `double`.** No es purismo: con `double`, convertir 10.000.000
+armaba la URL `/pair/USD/ARS/1.0E7` —porque así serializa Java un double grande— y la API
+devolvía 404. El mismo cambio que arregla la precisión arregla el bug: `toPlainString()`.
+
+**Los errores se leen del cuerpo, no del código HTTP.** ExchangeRate-API responde 200 con
+`result: "error"` cuando el código de moneda no existe, y 403 con `error-type: invalid-key`
+cuando la clave está mal. Mirar solo el status daría "error 403" cuando se puede decir "la API
+Key no es válida".
+
+**Los logs no van a la consola.** La pantalla es de la interfaz ANSI; el log va a
+`logs/conversor.log`. Antes cada conversión imprimía sus líneas de log en medio de la interfaz.
+
+**Un historial corrupto no impide arrancar.** Se carga desde el constructor, así que un JSON
+inválido tiraba la aplicación abajo antes de mostrar el menú. Ahora se avisa por el log y se
+empieza uno nuevo.
+
+**Hay un solo paginador.** La lista de monedas y el historial tenían cada uno su bucle:
+cuarenta líneas casi calcadas con los mismos comandos. `Paginador<T>` es ese bucle, una sola
+vez.
+
+**La entrada estándar se puede cerrar.** Con Ctrl+D o una tubería que termina,
+`Scanner.nextLine()` lanza `NoSuchElementException`; antes eso escapaba de `main` y le mostraba
+un stack trace al usuario. Ahora la aplicación cierra ordenadamente.
+
+## Tecnologías
+
+Java 21 · Gradle · `java.net.http.HttpClient` · Gson · SLF4J + Logback · JUnit 5 · Mockito · Docker · ttyd
+
+---
+
+Hecho por Lautaro Sebastian Mambrin (Neo236).
