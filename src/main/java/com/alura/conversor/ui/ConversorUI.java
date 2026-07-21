@@ -76,11 +76,16 @@ public class ConversorUI {
             if (SALIR.equals(entrada)) {
                 return Optional.empty();
             }
-            if (entrada.length() == 3) {
+            if (esCodigoDeMoneda(entrada)) {
                 return Optional.of(entrada);
             }
-            consola.error("Ingresá exactamente 3 letras para la moneda.");
+            consola.error("Ingresá exactamente 3 letras para la moneda (ej. USD).");
         }
+    }
+
+    /** Un código ISO 4217 son tres letras. La API igual lo rechaza, pero atajarlo acá evita el viaje. */
+    private static boolean esCodigoDeMoneda(String entrada) {
+        return entrada.length() == 3 && entrada.chars().allMatch(Character::isLetter);
     }
 
     /** Vacío si el usuario pidió salir. */

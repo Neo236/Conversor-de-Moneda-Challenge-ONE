@@ -83,6 +83,16 @@ class ConversorUITest {
     }
 
     @Test
+    void rechazaUnCodigoDeMonedaConNumeros() {
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        var texto = correrCon("US1\nUSD\nARS\n100\nsalir\n");
+
+        assertTrue(texto.contains("3 letras"), "US1 tiene un número: no es un código de moneda");
+        verify(servicio).convertir("USD", "ARS", new BigDecimal("100"));
+    }
+
+    @Test
     void rechazaUnaCantidadQueNoEsNumero() {
         when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
 
