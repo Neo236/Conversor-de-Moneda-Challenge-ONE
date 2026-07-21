@@ -1,28 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  La aplicación es una interfaz ANSI en la terminal: la pantalla es de la UI, no del log.
+  Antes el logger de com.alura.conversor apuntaba a STDOUT y a FILE a la vez —
+  contradiciendo el comentario que decía justamente lo contrario— y cada conversión
+  escupía sus líneas de log en medio de la interfaz.
+
+  Ahora todo va al archivo. Los errores que le importan al usuario se los muestra la UI.
+-->
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/conversor.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/conversor.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>5MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>50MB</totalSizeCap>
+        </rollingPolicy>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- Optionally, a file appender for keeping logs -->
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>application.log</file>
-        <append>true</append>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <!-- Configure root logger. For this CLI, we probably want to keep the console clean except for errors -->
-    <!-- So we set ROOT level to ERROR for console, but can log INFO to FILE -->
-    <root level="ERROR">
-        <appender-ref ref="STDOUT" />
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
     </root>
-
-    <!-- App-specific logger, let's log INFO and above to file -->
-    <logger name="com.alura.conversor" level="INFO" additivity="false">
-        <appender-ref ref="FILE" />
-        <appender-ref ref="STDOUT" />
-    </logger>
 </configuration>

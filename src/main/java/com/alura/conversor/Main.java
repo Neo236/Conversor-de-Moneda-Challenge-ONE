@@ -1,50 +1,52 @@
 package com.alura.conversor;
 
+import com.alura.conversor.api.ClienteExchangeRate;
+import com.alura.conversor.historial.HistorialEnArchivo;
+import com.alura.conversor.ui.Consola;
+import com.alura.conversor.ui.ConversorUI;
+import com.alura.conversor.ui.EntradaFinalizadaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Scanner;
-
+/** Punto de entrada: arma las piezas y arranca la interfaz. */
 public class Main {
+
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static final String RESET = "\033[0m";
-    private static final String RED = "\033[0;31m";
-    private static final String GREEN = "\033[0;32m";
-    private static final String YELLOW = "\033[0;33m";
-    private static final String CYAN = "\033[0;36m";
-
     public static void main(String[] args) {
-        logger.info("Iniciando aplicación Conversor de Moneda");
+        logger.info("Iniciando el Conversor de Moneda");
 
-        Scanner scanner = new Scanner(System.in);
-        String apiKey = obtenerApiKey(scanner);
+        var consola = new Consola();
+        var apiKey = obtenerApiKey(consola);
 
-        CurrencyService currencyService = new ConsultaMoneda(apiKey);
-        HistoryRepository historyRepository = new GestorHistorial();
-
-        ConsoleUI consoleUI = new ConsoleUI(currencyService, historyRepository, scanner);
-        consoleUI.start();
+        new ConversorUI(new ClienteExchangeRate(apiKey), new HistorialEnArchivo(), consola).iniciar();
 
         logger.info("Aplicación finalizada");
     }
 
-    private static String obtenerApiKey(Scanner scanner) {
-        String envKey = System.getenv("EXCHANGE_RATE_API_KEY");
-        if (envKey != null && !envKey.isBlank()) {
-            return envKey;
+    /**
+     * Prioriza la variable de entorno y, si no está, la pide por teclado. La clave nunca
+     * se escribe a disco ni se registra en el log.
+     */
+    private static String obtenerApiKey(Consola consola) {
+        var deEntorno = System.getenv("EXCHANGE_RATE_API_KEY");
+        if (deEntorno != null && !deEntorno.isBlank()) {
+            return deEntorno;
         }
 
-        System.out.println(YELLOW + "ATENCION: La variable de entorno EXCHANGE_RATE_API_KEY no fue detectada." + RESET);
-        System.out.print(CYAN + "Por favor, ingrese su API Key de ExchangeRate-API para esta sesion: " + RESET);
-        String manualKey = scanner.nextLine().trim();
+        consola.aviso("No se encontró la variable de entorno EXCHANGE_RATE_API_KEY.");
+        consola.imprimirSinSalto("Ingresá tu API Key de ExchangeRate-API para esta sesión: ");
 
-        if (manualKey.isEmpty()) {
-            System.out.println(RED + "No se ingreso API Key. El programa puede fallar al consultar monedas." + RESET);
+        try {
+            var manual = consola.leerLinea();
+            if (manual.isEmpty()) {
+                consola.error("No ingresaste ninguna API Key: las consultas van a fallar.");
+                return null;
+            }
+            consola.exito("API Key configurada en memoria.");
+            return manual;
+        } catch (EntradaFinalizadaException e) {
             return null;
         }
-
-        System.out.println(GREEN + "API Key configurada en memoria." + RESET);
-        return manualKey;
     }
 }

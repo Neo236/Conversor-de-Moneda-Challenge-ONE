@@ -7,4 +7,5 @@ out/
 *.iws
 *.ipr
 historial.json
+logs/
 *.log
