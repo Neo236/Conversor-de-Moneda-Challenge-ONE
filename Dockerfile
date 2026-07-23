@@ -28,20 +28,3 @@ USER conversor
 # La API Key se pasa por entorno (-e EXCHANGE_RATE_API_KEY=...). Si falta, la app la
 # pide por teclado y la usa solo en memoria.
 ENTRYPOINT ["/opt/conversor/bin/conversor"]
-
-# --- Etapa web: la misma app, envuelta en una terminal de navegador (ttyd) ---
-# Cada pestaña que se conecta corre su propia instancia real del Conversor, con sus
-# colores ANSI y su teclado. Pensada para auto-hostearla y que cualquiera la pruebe
-# sin instalar Java. La API Key vive del lado del servidor y nunca llega al navegador.
-FROM runtime AS web
-USER root
-
-# ttyd: un único binario estático, sin dependencias que instalar en la imagen.
-ADD https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 /usr/local/bin/ttyd
-COPY docker/serve.sh /usr/local/bin/serve.sh
-COPY docker/web-run.sh /opt/conversor/web-run.sh
-RUN chmod +x /usr/local/bin/ttyd /usr/local/bin/serve.sh /opt/conversor/web-run.sh
-
-EXPOSE 7681
-USER conversor
-ENTRYPOINT ["/usr/local/bin/serve.sh"]

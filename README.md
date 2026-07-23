@@ -34,18 +34,6 @@ Hace falta una API Key de ExchangeRate-API (gratis en
 la variable de entorno, la app te pide la clave por teclado y la usa solo en memoria: nunca se
 escribe a disco ni aparece en los logs.
 
-**Terminal web, sin instalar nada.** La app se auto-hostea como una terminal de navegador con
-[`ttyd`](https://github.com/tsl0922/ttyd): cada pestaña que se conecta corre su propia
-instancia real, con sus colores y su teclado, contra la API en vivo. La clave vive solo del
-lado del servidor y nunca viaja al navegador.
-
-```bash
-export EXCHANGE_RATE_API_KEY="tu_clave"
-docker compose -f docker-compose.web.yml up -d --build
-```
-
-Después se abre en `http://IP-DEL-HOST:8091` desde cualquier dispositivo de la red.
-
 **Con Docker, sin instalar Java.**
 
 ```bash
@@ -127,7 +115,7 @@ un stack trace al usuario. Ahora la aplicación cierra ordenadamente.
 
 ## Tecnologías
 
-Java 21 · Gradle · `java.net.http.HttpClient` · Gson · SLF4J + Logback · JUnit 5 · Mockito · Docker · ttyd
+Java 21 · Gradle · `java.net.http.HttpClient` · Gson · SLF4J + Logback · JUnit 5 · Mockito · Docker
 
 ---
 

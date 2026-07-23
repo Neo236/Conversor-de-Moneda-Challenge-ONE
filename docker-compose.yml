@@ -2,7 +2,6 @@ services:
   conversor:
     build:
       context: .
-      # La imagen de consola: la etapa web queda para docker-compose.web.yml.
       target: runtime
     image: conversor:local
     # El menú se maneja por teclado, así que hay que arrancarlo con:
