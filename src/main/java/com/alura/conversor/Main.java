@@ -8,6 +8,8 @@ import com.alura.conversor.ui.EntradaFinalizadaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+
 /** Punto de entrada: arma las piezas y arranca la interfaz. */
 public class Main {
 
@@ -16,7 +18,8 @@ public class Main {
     public static void main(String[] args) {
         logger.info("Iniciando el Conversor de Moneda");
 
-        var consola = new Consola();
+        // --no-color apaga los ANSI a mano; NO_COLOR y la autodetección viven en Consola.
+        var consola = Arrays.asList(args).contains("--no-color") ? new Consola(false) : new Consola();
         var apiKey = obtenerApiKey(consola);
 
         new ConversorUI(new ClienteExchangeRate(apiKey), new HistorialEnArchivo(), consola).iniciar();

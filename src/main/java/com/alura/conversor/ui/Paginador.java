@@ -88,9 +88,9 @@ public class Paginador<T> {
     }
 
     private void mostrarPagina(List<T> visibles, int pagina, int totalPaginas) {
-        consola.titulo("\n===================================================");
-        consola.aviso("                " + titulo);
-        consola.titulo("===================================================");
+        consola.titulo("\n" + "=".repeat(Consola.ANCHO));
+        consola.aviso(Consola.centrar(titulo));
+        consola.titulo("=".repeat(Consola.ANCHO));
 
         if (visibles.isEmpty()) {
             consola.error("  No se encontraron resultados.");
@@ -101,7 +101,7 @@ public class Paginador<T> {
         }
 
         consola.separador();
-        consola.exito(String.format("               Página %d de %d", pagina, totalPaginas));
+        consola.exito(Consola.centrar(String.format("Página %d de %d", pagina, totalPaginas)));
         consola.separador();
     }
 

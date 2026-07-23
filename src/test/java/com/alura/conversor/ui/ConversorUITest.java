@@ -68,7 +68,8 @@ class ConversorUITest {
 
         var texto = correrCon("USD\nARS\n100\nsalir\n");
 
-        assertTrue(texto.contains("101050.00"), "debe mostrar el resultado");
+        assertTrue(texto.contains("101.050,00"), "debe mostrar el resultado en formato es-AR");
+        assertTrue(texto.contains("1.010,50"), "la tasa también va en formato es-AR");
         var registro = ArgumentCaptor.forClass(RegistroConversion.class);
         verify(historial).agregarRegistro(registro.capture());
         assertEquals("USD", registro.getValue().monedaBase());

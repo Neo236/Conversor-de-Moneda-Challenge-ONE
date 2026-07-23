@@ -10,9 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -29,6 +33,10 @@ public class ConversorUI {
     private static final Pattern MILES_Y_COMA = Pattern.compile("\\d{1,3}(\\.\\d{3})+,\\d+");
     private static final Pattern SOLO_MILES = Pattern.compile("\\d{1,3}(\\.\\d{3})+");
 
+    // Los montos se MUESTRAN como se leen en es-AR (101.050,00); lo que viaja a la API y
+    // lo que se persiste sigue siendo el BigDecimal crudo, que no tiene ambigüedad.
+    private static final DecimalFormat FORMATO_MONTO = formatoMonto();
+
     private final ServicioDeCambio servicio;
     private final RepositorioHistorial historial;
     private final Consola consola;
@@ -43,9 +51,9 @@ public class ConversorUI {
     }
 
     public void iniciar() {
-        consola.titulo("***************************************************");
-        consola.exito("Bienvenido al Conversor de Moneda =)");
-        consola.titulo("***************************************************");
+        consola.titulo("*".repeat(Consola.ANCHO));
+        consola.exito(Consola.centrar("Bienvenido al Conversor de Moneda =)"));
+        consola.titulo("*".repeat(Consola.ANCHO));
 
         try {
             bucle();
@@ -143,10 +151,10 @@ public class ConversorUI {
 
             consola.separador();
             consola.aviso(String.format("Tasa actual: 1 %s = %s %s",
-                    respuesta.baseCode(), respuesta.conversionRate().toPlainString(), respuesta.targetCode()));
+                    respuesta.baseCode(), formatear(respuesta.conversionRate()), respuesta.targetCode()));
             consola.exito(String.format("RESULTADO: %s [%s] equivale a =>>> %s [%s]",
-                    cantidad.toPlainString(), respuesta.baseCode(),
-                    respuesta.conversionResult().toPlainString(), respuesta.targetCode()));
+                    formatear(cantidad), respuesta.baseCode(),
+                    formatear(respuesta.conversionResult()), respuesta.targetCode()));
             consola.separador();
 
         } catch (ConversionMonedaException e) {
@@ -233,20 +241,35 @@ public class ConversorUI {
     private boolean mostrarHistorial() {
         var registros = new ArrayList<>(historial.obtenerHistorial());
         if (registros.isEmpty()) {
-            consola.aviso("\n--- HISTORIAL DE CONVERSIONES ---");
+            consola.titulo("\n" + "=".repeat(Consola.ANCHO));
+            consola.aviso(Consola.centrar("HISTORIAL DE CONVERSIONES"));
+            consola.titulo("=".repeat(Consola.ANCHO));
             consola.imprimir("Todavía no hay conversiones registradas.");
-            consola.aviso("---------------------------------");
+            consola.separador();
             return false;
         }
 
         // Lo más reciente primero: es lo que a uno le interesa mirar.
         java.util.Collections.reverse(registros);
 
+        // Montos alineados a la derecha: la fecha ya es de ancho fijo y los códigos son
+        // de 3 letras, así que con esto las flechas quedan en columna.
         return new Paginador<RegistroConversion>(consola, "HISTORIAL DE CONVERSIONES", 10,
-                r -> String.format("[%s] %s %s -> %s %s",
-                        r.fechaHora(), r.cantidad().toPlainString(), r.monedaBase(),
-                        r.resultado().toPlainString(), r.monedaObjetivo()))
+                r -> String.format("[%s] %12s %s -> %14s %s",
+                        r.fechaHora(), formatear(r.cantidad()), r.monedaBase(),
+                        formatear(r.resultado()), r.monedaObjetivo()))
                 .recorrer(registros);
+    }
+
+    private static String formatear(BigDecimal monto) {
+        return FORMATO_MONTO.format(monto);
+    }
+
+    private static DecimalFormat formatoMonto() {
+        var formato = new DecimalFormat("#,##0.00####",
+                DecimalFormatSymbols.getInstance(Locale.of("es", "AR")));
+        formato.setRoundingMode(RoundingMode.HALF_UP);
+        return formato;
     }
 
     /** Señal interna: el usuario canceló la operación en curso para volver al inicio. */
