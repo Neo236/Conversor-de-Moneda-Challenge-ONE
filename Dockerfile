@@ -26,5 +26,5 @@ RUN chown -R conversor:conversor /data
 USER conversor
 
 # La API Key se pasa por entorno (-e EXCHANGE_RATE_API_KEY=...). Si falta, la app la
-# pide por teclado y la usa solo en memoria.
+# pide por teclado (queda solo en memoria) o sigue sin clave con las tasas del día.
 ENTRYPOINT ["/opt/conversor/bin/conversor"]

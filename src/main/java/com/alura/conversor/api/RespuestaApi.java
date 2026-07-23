@@ -8,7 +8,7 @@ package com.alura.conversor.api;
  * en una interfaz permite leer el motivo real del error una sola vez, sin importar
  * qué endpoint se consultó.
  */
-public sealed interface RespuestaApi permits RespuestaConversion, RespuestaCodigos {
+public sealed interface RespuestaApi permits RespuestaConversion, RespuestaCodigos, RespuestaTasas {
 
     String result();
 

@@ -202,6 +202,32 @@ class ConversorUITest {
     }
 
     @Test
+    void dejaCaerElRecordatorioCadaCincoConversiones() {
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        salida = new ByteArrayOutputStream();
+        var consola = new Consola(
+                new Scanner(new ByteArrayInputStream(
+                        "USD\nARS\n100\nr\nr\nr\nr\nsalir\n".getBytes(StandardCharsets.UTF_8))),
+                new PrintStream(salida, true, StandardCharsets.UTF_8));
+        new ConversorUI(servicio, historial, consola, "(psst: probá con una cuenta)").iniciar();
+        var texto = salida.toString(StandardCharsets.UTF_8);
+
+        var primerAviso = texto.indexOf("(psst:");
+        assertTrue(primerAviso >= 0, "a la quinta conversión tiene que aparecer el recordatorio");
+        assertEquals(primerAviso, texto.lastIndexOf("(psst:"), "una sola vez, no en cada conversión");
+    }
+
+    @Test
+    void sinRecordatorioConfiguradoNoMolesta() {
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        var texto = correrCon("USD\nARS\n100\nr\nr\nr\nr\nsalir\n");
+
+        assertTrue(!texto.contains("(psst:"));
+    }
+
+    @Test
     void muestraElErrorDeLaApiSinCaerse() {
         when(servicio.convertir(any(), any(), any()))
                 .thenThrow(new ConversionMonedaException("Alguno de los códigos de moneda no existe"));

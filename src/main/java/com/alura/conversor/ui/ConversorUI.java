@@ -37,17 +37,30 @@ public class ConversorUI {
     // lo que se persiste sigue siendo el BigDecimal crudo, que no tiene ambigüedad.
     private static final DecimalFormat FORMATO_MONTO = formatoMonto();
 
+    /** Cada cuántas conversiones exitosas se deja caer el recordatorio casual. */
+    private static final int CADA_CUANTO_RECORDAR = 5;
+
     private final ServicioDeCambio servicio;
     private final RepositorioHistorial historial;
     private final Consola consola;
 
+    /** Mensaje que se deja caer cada tantas conversiones; null si no hay nada que recordar. */
+    private final String recordatorio;
+
     /** La última conversión exitosa, para poder repetirla o invertirla. */
     private RegistroConversion ultimaConversion;
+    private int conversionesExitosas;
 
     public ConversorUI(ServicioDeCambio servicio, RepositorioHistorial historial, Consola consola) {
+        this(servicio, historial, consola, null);
+    }
+
+    public ConversorUI(ServicioDeCambio servicio, RepositorioHistorial historial, Consola consola,
+                       String recordatorio) {
         this.servicio = servicio;
         this.historial = historial;
         this.consola = consola;
+        this.recordatorio = recordatorio;
     }
 
     public void iniciar() {
@@ -156,6 +169,11 @@ public class ConversorUI {
                     formatear(cantidad), respuesta.baseCode(),
                     formatear(respuesta.conversionResult()), respuesta.targetCode()));
             consola.separador();
+
+            conversionesExitosas++;
+            if (recordatorio != null && conversionesExitosas % CADA_CUANTO_RECORDAR == 0) {
+                consola.imprimir(recordatorio);
+            }
 
         } catch (ConversionMonedaException e) {
             consola.error("No se pudo hacer la conversión: " + e.getMessage());

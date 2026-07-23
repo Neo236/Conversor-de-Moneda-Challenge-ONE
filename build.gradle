@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'application'
+    // Fat-jar para los releases: java -jar conversor.jar, sin instalar nada más.
+    id 'com.gradleup.shadow' version '8.3.5'
 }
 
 group = 'com.alura.conversor'
@@ -50,6 +52,12 @@ tasks.named('test') {
     testLogging {
         events 'passed', 'skipped', 'failed'
     }
+}
+
+tasks.named('shadowJar') {
+    // Un solo nombre estable, para que el link del release nunca cambie.
+    archiveFileName = 'conversor.jar'
+    mergeServiceFiles()
 }
 
 tasks.withType(JavaCompile).configureEach {

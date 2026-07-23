@@ -1,1 +1,7 @@
+plugins {
+    // Si la máquina no tiene el JDK 21 del toolchain, Gradle lo descarga solo:
+    // "tener algún JDK" alcanza para correr el proyecto.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
 rootProject.name = 'alura-challenge-conversor-moneda'

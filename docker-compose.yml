@@ -10,8 +10,8 @@ services:
     stdin_open: true
     tty: true
     environment:
-      # Si no la definís, la app te pide la API Key por teclado.
-      # Clave gratis en https://www.exchangerate-api.com/
+      # Si no la definís, la app te pide la clave por teclado o sigue sin clave con
+      # las tasas del día. Clave gratis en https://www.exchangerate-api.com/
       EXCHANGE_RATE_API_KEY: ${EXCHANGE_RATE_API_KEY:-}
     volumes:
       # Persiste el historial de conversiones fuera del contenedor (opcional).

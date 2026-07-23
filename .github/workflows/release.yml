@@ -1,0 +1,43 @@
+name: Release
+
+# Al pushear un tag v* se corre la suite, se arma el fat-jar y se publica el
+# release con conversor.jar como asset: el camino "bajá y corré" del README.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Jar ejecutable
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests
+        run: ./gradlew test
+
+      - name: Fat-jar
+        run: ./gradlew shadowJar
+
+      - name: Publicar el release con el jar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/libs/conversor.jar \
+            --title "Conversor de Moneda" \
+            --notes "Jar ejecutable: \`java -jar conversor.jar\` (hace falta Java 21 o más nuevo).
+
+          Sin API key funciona con las tasas del día; con la variable de entorno \`EXCHANGE_RATE_API_KEY\` definida, cotización al minuto."
