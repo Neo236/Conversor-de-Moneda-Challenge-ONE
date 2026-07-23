@@ -54,11 +54,11 @@ public class Consola {
         if (System.getenv("NO_COLOR") != null || "dumb".equals(System.getenv("TERM"))) {
             return false;
         }
-        if (System.console() == null) {
+        if (!hayTerminalInteractiva()) {
             // La salida está redirigida: los escapes irían crudos al archivo o al pipe.
             return false;
         }
-        if (System.getProperty("os.name", "").toLowerCase().contains("win")) {
+        if (System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win")) {
             // La JVM no activa el procesamiento VT de Windows, así que solo hay colores
             // si la terminal ya lo trae (Windows Terminal, ConEmu, ANSICON, Git Bash).
             return System.getenv("WT_SESSION") != null
@@ -67,6 +67,21 @@ public class Consola {
                     || System.getenv("TERM") != null;
         }
         return true;
+    }
+
+    private static boolean hayTerminalInteractiva() {
+        var console = System.console();
+        if (console == null) {
+            return false;
+        }
+        try {
+            // Desde JDK 22, System.console() ya no es null con la salida redirigida:
+            // la verdad la tiene Console.isTerminal(), que en 21 todavía no existe.
+            return (boolean) java.io.Console.class.getMethod("isTerminal").invoke(console);
+        } catch (ReflectiveOperationException e) {
+            // JDK 21: acá console != null ya implica una terminal interactiva.
+            return true;
+        }
     }
 
     /** @throws EntradaFinalizadaException si la entrada estándar se cerró */

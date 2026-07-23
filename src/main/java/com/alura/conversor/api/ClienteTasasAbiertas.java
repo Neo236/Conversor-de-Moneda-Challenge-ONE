@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.http.HttpClient;
 import java.util.Currency;
 import java.util.HashMap;
@@ -47,10 +46,10 @@ public class ClienteTasasAbiertas implements ServicioDeCambio {
             throw new ConversionMonedaException("Alguno de los códigos de moneda no existe");
         }
 
-        // El endpoint pair redondea el resultado a 2 decimales; acá igual, para que los
-        // dos modos de la aplicación se vean iguales.
-        var resultado = cantidad.multiply(tasa).setScale(2, RoundingMode.HALF_UP);
-        return new RespuestaConversion("success", null, monedaBase, monedaObjetivo, tasa, resultado);
+        // El producto exacto, sin redondear: recortarlo acá destruiría los resultados
+        // chicos (1 ARS ≈ 0,0007 USD se volvería 0,00). Redondear es tarea de quien muestra.
+        return new RespuestaConversion("success", null, monedaBase, monedaObjetivo,
+                tasa, cantidad.multiply(tasa));
     }
 
     @Override

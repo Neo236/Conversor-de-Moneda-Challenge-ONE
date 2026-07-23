@@ -21,8 +21,9 @@ nada.
 ## Qué hace
 
 - Convierte entre más de 150 monedas con la cotización del momento.
-- Funciona con o sin API key: con la clave la cotización es al minuto; sin ella usa las
-  tasas del día (cortesía de [Rates By Exchange Rate API](https://www.exchangerate-api.com)).
+- Funciona con o sin API key: sin ella usa las tasas del día (cortesía de
+  [Rates By Exchange Rate API](https://www.exchangerate-api.com)); con tu clave usás tu
+  propia cuota y la frecuencia de actualización de tu plan.
 - Comandos globales: lista, historial, repetir, invertir, cancelar o salir en cualquier
   momento, sin perder la operación en curso.
 - Lista de monedas paginada y con búsqueda por código o nombre (`b`).
@@ -35,11 +36,11 @@ nada.
 
 ## Cómo ejecutarlo
 
-Ningún camino exige registrarse: sin clave, la app sigue con las tasas del día. Para
-cotización al minuto, la API Key es gratis en
-[exchangerate-api.com](https://www.exchangerate-api.com/) y se pasa por la variable de
-entorno `EXCHANGE_RATE_API_KEY` (o se teclea al arrancar: queda solo en memoria, nunca se
-escribe a disco ni aparece en los logs).
+Ningún camino exige registrarse: sin clave, la app sigue con las tasas del día. Con una
+API Key propia (gratis en [exchangerate-api.com](https://www.exchangerate-api.com/)) usás
+tu cuota y la frecuencia de tu plan; se pasa por la variable de entorno
+`EXCHANGE_RATE_API_KEY` (o se teclea al arrancar: queda solo en memoria, nunca se escribe
+a disco ni aparece en los logs).
 
 **Con el jar del release — solo hace falta Java 21 o más nuevo.** Bajá `conversor.jar` del
 [último release](https://github.com/Neo236/Conversor-de-Moneda-Challenge-ONE/releases/latest) y:
@@ -100,7 +101,7 @@ Para armar una distribución con su script de arranque: `./gradlew installDist` 
 ./gradlew test
 ```
 
-76 tests, sin tocar la red: el `HttpClient` entra por constructor, así que las respuestas de
+78 tests, sin tocar la red: el `HttpClient` entra por constructor, así que las respuestas de
 la API están simuladas, y la interfaz se ejercita con un teclado y una salida de mentira.
 
 ## Estructura
@@ -118,15 +119,16 @@ com.alura.conversor
 **Sin API key la app no se vuelve un cascarón.** El modo sin clave usa el endpoint abierto
 de la misma ExchangeRate-API (tasas del día, atribución mediante) y calcula la conversión
 localmente; los nombres de las monedas los pone el JDK (`java.util.Currency`), en español.
-Registrarse mejora la frescura de la cotización, pero no es la barrera de entrada.
+Registrarse suma cuota propia y planes con más frescura, pero no es la barrera de entrada.
 
 **La plata es `BigDecimal`, no `double`.** No es purismo: con `double`, convertir 10.000.000
 armaba la URL `/pair/USD/ARS/1.0E7` —porque así serializa Java un double grande— y la API
 devolvía 404. El mismo cambio que arregla la precisión arregla el bug: `toPlainString()`.
 
-**La entrada no adivina montos.** `10,50` vale diez y medio, `1.234,56` vale mil doscientos
-—la coma desambigua—, pero `100.000` a secas se rechaza con un aviso: leerlo como cien con
-tres decimales convertiría en silencio un monto distinto al pedido.
+**La entrada no adivina montos.** `10,50` vale diez con cincuenta y `1.234,56` vale mil
+doscientos treinta y cuatro con cincuenta y seis —la coma desambigua—, pero `100.000` a
+secas se rechaza con un aviso: leerlo como cien con tres decimales convertiría en silencio
+un monto distinto al pedido.
 
 **Los errores se leen del cuerpo, no del código HTTP.** ExchangeRate-API responde 200 con
 `result: "error"` cuando el código de moneda no existe, y 403 con `error-type: invalid-key`

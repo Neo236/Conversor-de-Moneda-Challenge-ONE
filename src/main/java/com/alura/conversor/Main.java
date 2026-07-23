@@ -18,8 +18,9 @@ public class Main {
 
     /** Se deja caer cada tantas conversiones del modo sin clave, como sugerencia casual. */
     private static final String RECORDATORIO_SIN_CLAVE =
-            "(psst: seguís sin API key, con las tasas del día. Una cuenta gratis en"
-                    + " exchangerate-api.com te da cotización al minuto. Sin apuro.)";
+            "(psst: seguís sin API key, con las tasas del día. Una cuenta en"
+                    + " exchangerate-api.com te da cuota propia y, según el plan, tasas"
+                    + " más frescas. Sin apuro.)";
 
     public static void main(String[] args) {
         logger.info("Iniciando el Conversor de Moneda");

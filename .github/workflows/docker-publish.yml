@@ -11,6 +11,12 @@ permissions:
   contents: read
   packages: write
 
+# Dos pushes seguidos no deben competir: el run viejo se cancela para que :latest
+# siempre quede apuntando al commit más nuevo.
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   publish:
     name: Imagen a GHCR

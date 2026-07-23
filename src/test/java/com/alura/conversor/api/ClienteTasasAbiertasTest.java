@@ -59,17 +59,29 @@ class ClienteTasasAbiertasTest {
         assertEquals("USD", r.baseCode());
         assertEquals("BRL", r.targetCode());
         assertEquals(new BigDecimal("5.0766"), r.conversionRate());
-        assertEquals(new BigDecimal("1269.15"), r.conversionResult());
+        assertEquals(0, new BigDecimal("1269.15").compareTo(r.conversionResult()));
     }
 
     @Test
-    void redondeaElResultadoADosDecimalesComoElEndpointConClave() throws Exception {
+    void elResultadoEsElProductoExactoSinRedondear() throws Exception {
         responderCon(200, """
                 {"result":"success","base_code":"USD","rates":{"ARS":1480.185}}""");
 
         var r = cliente.convertir("USD", "ARS", BigDecimal.ONE);
 
-        assertEquals(new BigDecimal("1480.19"), r.conversionResult());
+        assertEquals(0, new BigDecimal("1480.185").compareTo(r.conversionResult()));
+    }
+
+    @Test
+    void unResultadoChicoNoSeDestruye() throws Exception {
+        // Regresión: un redondeo a 2 decimales convertía 1 ARS en 0,00 USD, y ese 0,00
+        // se persistía en el historial.
+        responderCon(200, """
+                {"result":"success","base_code":"ARS","rates":{"USD":0.000676}}""");
+
+        var r = cliente.convertir("ARS", "USD", BigDecimal.ONE);
+
+        assertEquals(0, new BigDecimal("0.000676").compareTo(r.conversionResult()));
     }
 
     @Test

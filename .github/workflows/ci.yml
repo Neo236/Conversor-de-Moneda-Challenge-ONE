@@ -28,5 +28,7 @@ jobs:
       - name: Tests
         run: ./gradlew test
 
+      # installDist arma la distribución que usa el Dockerfile; shadowJar, el fat-jar
+      # del release: si cualquiera se rompe, mejor enterarse acá y no al taguear.
       - name: Empaquetar
-        run: ./gradlew installDist
+        run: ./gradlew installDist shadowJar

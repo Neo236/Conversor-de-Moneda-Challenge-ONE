@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 
 # --- Etapa de build: compila y arma la distribución con su script de arranque ---
-FROM gradle:8.10-jdk21 AS build
+# --platform=$BUILDPLATFORM: el bytecode es portable, así que en un build multi-arch
+# se compila una sola vez en la plataforma nativa en vez de emular Gradle bajo QEMU.
+FROM --platform=$BUILDPLATFORM gradle:8.10-jdk21 AS build
 WORKDIR /src
 
 # Primero solo los archivos de build: si no cambian, esta capa (y la descarga de

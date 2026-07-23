@@ -4,7 +4,8 @@ package com.alura.conversor.api;
 public record Moneda(String codigo, String nombre) {
 
     public boolean coincideCon(String termino) {
-        var t = termino.toLowerCase();
-        return codigo.toLowerCase().contains(t) || nombre.toLowerCase().contains(t);
+        var t = termino.toLowerCase(java.util.Locale.ROOT);
+        return codigo.toLowerCase(java.util.Locale.ROOT).contains(t)
+                || nombre.toLowerCase(java.util.Locale.ROOT).contains(t);
     }
 }

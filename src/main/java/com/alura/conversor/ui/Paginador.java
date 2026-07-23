@@ -111,7 +111,7 @@ public class Paginador<T> {
                 : "[Comandos: s siguiente | a anterior | b buscar | v volver | salir]";
         consola.aviso(comandos);
         consola.imprimirSinSalto("> ");
-        return consola.leerLinea().toLowerCase();
+        return consola.leerLinea().toLowerCase(java.util.Locale.ROOT);
     }
 
     private List<T> filtrar(List<T> items) {

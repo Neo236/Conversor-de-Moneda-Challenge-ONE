@@ -155,6 +155,17 @@ class ConversorUITest {
     }
 
     @Test
+    void rechazaElAgrupadoParcialDeMiles() {
+        // "1234.567" es 1.234.567 con solo el último punto puesto, no un decimal de tres cifras.
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        var texto = correrCon("USD\nARS\n1234.567\n1234567\nsalir\n");
+
+        assertTrue(texto.contains("separador de miles"));
+        verify(servicio).convertir("USD", "ARS", new BigDecimal("1234567"));
+    }
+
+    @Test
     void cancelarAbortaLaOperacionSinCerrarLaAplicacion() {
         when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
 

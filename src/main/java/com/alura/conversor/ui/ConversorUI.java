@@ -30,9 +30,10 @@ public class ConversorUI {
     // "100.000" en es-AR es cien mil: tomar el punto como decimal convertiría otro monto
     // en silencio. Con coma decimal presente ("1.234,56") los puntos son de miles y se
     // pueden sacar sin dudas; sin ella, mejor pedir el monto de nuevo. El primer grupo
-    // no puede arrancar con 0: "0.132" es un decimal, no un separador de miles.
-    private static final Pattern MILES_Y_COMA = Pattern.compile("[1-9]\\d{0,2}(\\.\\d{3})+,\\d+");
-    private static final Pattern SOLO_MILES = Pattern.compile("[1-9]\\d{0,2}(\\.\\d{3})+");
+    // no puede arrancar con 0 ("0.132" es un decimal) pero sí puede ser largo: "1234.567"
+    // es un agrupado parcial de miles, no un decimal de tres cifras.
+    private static final Pattern MILES_Y_COMA = Pattern.compile("\\+?[1-9]\\d*(\\.\\d{3})+,\\d+");
+    private static final Pattern SOLO_MILES = Pattern.compile("\\+?[1-9]\\d*(\\.\\d{3})+");
 
     // Los montos se MUESTRAN como se leen en es-AR (101.050,00); lo que viaja a la API y
     // lo que se persiste sigue siendo el BigDecimal crudo, que no tiene ambigüedad.
@@ -196,7 +197,9 @@ public class ConversorUI {
             consola.aviso("[Comandos: l lista | h historial | r repetir | i invertir | c cancelar | salir]");
             consola.imprimirSinSalto("> ");
 
-            var entrada = consola.leerLinea().toLowerCase();
+            // Locale.ROOT: con el locale turco, "I".toLowerCase() da "ı" y el comando
+            // 'i' (invertir) dejaría de responder.
+            var entrada = consola.leerLinea().toLowerCase(Locale.ROOT);
 
             switch (entrada) {
                 case "salir" -> {
@@ -217,7 +220,7 @@ public class ConversorUI {
                 case "i", "invertir" -> repetirUltima(true);
                 default -> {
                     if (!entrada.isEmpty()) {
-                        return entrada.toUpperCase();
+                        return entrada.toUpperCase(Locale.ROOT);
                     }
                 }
             }

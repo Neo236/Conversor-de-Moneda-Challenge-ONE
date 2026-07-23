@@ -40,4 +40,4 @@ jobs:
             --title "Conversor de Moneda" \
             --notes "Jar ejecutable: \`java -jar conversor.jar\` (hace falta Java 21 o más nuevo).
 
-          Sin API key funciona con las tasas del día; con la variable de entorno \`EXCHANGE_RATE_API_KEY\` definida, cotización al minuto."
+          Sin API key funciona con las tasas del día; con la variable de entorno \`EXCHANGE_RATE_API_KEY\` definida usa tu cuenta de ExchangeRate-API."
