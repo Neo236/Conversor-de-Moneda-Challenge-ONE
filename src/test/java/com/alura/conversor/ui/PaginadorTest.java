@@ -104,4 +104,14 @@ class PaginadorTest {
 
         assertTrue(texto().contains("Comando no reconocido"));
     }
+
+    @Test
+    void volverNoPideSalirDeLaAplicacion() {
+        assertFalse(paginadorCon("v\n").recorrer(monedas(3)));
+    }
+
+    @Test
+    void salirDentroDeLaListaPideSalirDeLaAplicacion() {
+        assertTrue(paginadorCon("salir\n").recorrer(monedas(3)));
+    }
 }

@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /** Flujo de la aplicación: pedir datos, convertir y mostrar el resultado. */
 public class ConversorUI {
@@ -22,9 +23,18 @@ public class ConversorUI {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final String SALIR = "SALIR";
 
+    // "100.000" en es-AR es cien mil: tomar el punto como decimal convertiría otro monto
+    // en silencio. Con coma decimal presente ("1.234,56") los puntos son de miles y se
+    // pueden sacar sin dudas; sin ella, mejor pedir el monto de nuevo.
+    private static final Pattern MILES_Y_COMA = Pattern.compile("\\d{1,3}(\\.\\d{3})+,\\d+");
+    private static final Pattern SOLO_MILES = Pattern.compile("\\d{1,3}(\\.\\d{3})+");
+
     private final ServicioDeCambio servicio;
     private final RepositorioHistorial historial;
     private final Consola consola;
+
+    /** La última conversión exitosa, para poder repetirla o invertirla. */
+    private RegistroConversion ultimaConversion;
 
     public ConversorUI(ServicioDeCambio servicio, RepositorioHistorial historial, Consola consola) {
         this.servicio = servicio;
@@ -48,24 +58,28 @@ public class ConversorUI {
 
     private void bucle() {
         while (true) {
-            var monedaBase = pedirMoneda("\nElegí la moneda de " + consola.resaltar("ORIGEN")
-                    + " (código de 3 letras, ej. USD):");
-            if (monedaBase.isEmpty()) {
-                return;
-            }
+            try {
+                var monedaBase = pedirMoneda("\nElegí la moneda de " + consola.resaltar("ORIGEN")
+                        + " (código de 3 letras, ej. USD):");
+                if (monedaBase.isEmpty()) {
+                    return;
+                }
 
-            var monedaObjetivo = pedirMoneda("\n¿A qué moneda querés " + consola.resaltar("CONVERTIR")
-                    + "? (ej. ARS, COP):");
-            if (monedaObjetivo.isEmpty()) {
-                return;
-            }
+                var monedaObjetivo = pedirMoneda("\n¿A qué moneda querés " + consola.resaltar("CONVERTIR")
+                        + "? (ej. ARS, COP):");
+                if (monedaObjetivo.isEmpty()) {
+                    return;
+                }
 
-            var cantidad = pedirCantidad();
-            if (cantidad.isEmpty()) {
-                return;
-            }
+                var cantidad = pedirCantidad();
+                if (cantidad.isEmpty()) {
+                    return;
+                }
 
-            convertir(monedaBase.get(), monedaObjetivo.get(), cantidad.get());
+                convertir(monedaBase.get(), monedaObjetivo.get(), cantidad.get());
+            } catch (OperacionCancelada e) {
+                consola.aviso("Operación cancelada: volvés al inicio.");
+            }
         }
     }
 
@@ -95,6 +109,12 @@ public class ConversorUI {
             if (SALIR.equals(entrada)) {
                 return Optional.empty();
             }
+            if (MILES_Y_COMA.matcher(entrada).matches()) {
+                entrada = entrada.replace(".", "");
+            } else if (SOLO_MILES.matcher(entrada).matches()) {
+                consola.error("Escribí el monto sin separador de miles (ej. 100000 o 100000,50).");
+                continue;
+            }
             try {
                 // La coma decimal es lo natural en es-AR; BigDecimal solo entiende el punto.
                 var cantidad = new BigDecimal(entrada.replace(",", "."));
@@ -114,10 +134,12 @@ public class ConversorUI {
         try {
             RespuestaConversion respuesta = servicio.convertir(base, objetivo, cantidad);
 
-            historial.agregarRegistro(new RegistroConversion(
+            var registro = new RegistroConversion(
                     respuesta.baseCode(), respuesta.targetCode(),
                     cantidad, respuesta.conversionResult(),
-                    LocalDateTime.now().format(FORMATO_FECHA)));
+                    LocalDateTime.now().format(FORMATO_FECHA));
+            historial.agregarRegistro(registro);
+            ultimaConversion = registro;
 
             consola.separador();
             consola.aviso(String.format("Tasa actual: 1 %s = %s %s",
@@ -144,7 +166,7 @@ public class ConversorUI {
     private String leerEntrada(String mensaje) {
         while (true) {
             consola.imprimir(mensaje);
-            consola.aviso("[Comandos: 'l' (lista) | 'h' (historial) | 'salir']");
+            consola.aviso("[Comandos: l lista | h historial | r repetir | i invertir | c cancelar | salir]");
             consola.imprimirSinSalto("> ");
 
             var entrada = consola.leerLinea().toLowerCase();
@@ -153,8 +175,19 @@ public class ConversorUI {
                 case "salir" -> {
                     return SALIR;
                 }
-                case "h", "historial" -> mostrarHistorial();
-                case "l", "lista" -> mostrarMonedas();
+                case "c", "cancelar" -> throw new OperacionCancelada();
+                case "h", "historial" -> {
+                    if (mostrarHistorial()) {
+                        return SALIR;
+                    }
+                }
+                case "l", "lista" -> {
+                    if (mostrarMonedas()) {
+                        return SALIR;
+                    }
+                }
+                case "r", "repetir" -> repetirUltima(false);
+                case "i", "invertir" -> repetirUltima(true);
                 default -> {
                     if (!entrada.isEmpty()) {
                         return entrada.toUpperCase();
@@ -165,37 +198,58 @@ public class ConversorUI {
         }
     }
 
-    private void mostrarMonedas() {
+    /** Rehace la última conversión; invertida, convierte el resultado de vuelta. */
+    private void repetirUltima(boolean invertida) {
+        if (ultimaConversion == null) {
+            consola.aviso("Todavía no hiciste ninguna conversión.");
+            return;
+        }
+        var r = ultimaConversion;
+        if (invertida) {
+            convertir(r.monedaObjetivo(), r.monedaBase(), r.resultado());
+        } else {
+            convertir(r.monedaBase(), r.monedaObjetivo(), r.cantidad());
+        }
+    }
+
+    /** @return {@code true} si el usuario pidió salir desde adentro de la lista. */
+    private boolean mostrarMonedas() {
         try {
             consola.titulo("\nConsultando la lista de monedas...");
             var monedas = servicio.monedasSoportadas();
 
-            new Paginador<Moneda>(consola, "LISTA DE MONEDAS", 15,
+            return new Paginador<Moneda>(consola, "LISTA DE MONEDAS", 15,
                     m -> String.format("%s - %s", m.codigo(), m.nombre()),
                     Moneda::coincideCon)
                     .recorrer(monedas);
 
         } catch (ConversionMonedaException e) {
             consola.error("No se pudo obtener la lista: " + e.getMessage());
+            return false;
         }
     }
 
-    private void mostrarHistorial() {
+    /** @return {@code true} si el usuario pidió salir desde adentro del historial. */
+    private boolean mostrarHistorial() {
         var registros = new ArrayList<>(historial.obtenerHistorial());
         if (registros.isEmpty()) {
             consola.aviso("\n--- HISTORIAL DE CONVERSIONES ---");
             consola.imprimir("Todavía no hay conversiones registradas.");
             consola.aviso("---------------------------------");
-            return;
+            return false;
         }
 
         // Lo más reciente primero: es lo que a uno le interesa mirar.
         java.util.Collections.reverse(registros);
 
-        new Paginador<RegistroConversion>(consola, "HISTORIAL DE CONVERSIONES", 10,
+        return new Paginador<RegistroConversion>(consola, "HISTORIAL DE CONVERSIONES", 10,
                 r -> String.format("[%s] %s %s -> %s %s",
                         r.fechaHora(), r.cantidad().toPlainString(), r.monedaBase(),
                         r.resultado().toPlainString(), r.monedaObjetivo()))
                 .recorrer(registros);
+    }
+
+    /** Señal interna: el usuario canceló la operación en curso para volver al inicio. */
+    private static class OperacionCancelada extends RuntimeException {
     }
 }

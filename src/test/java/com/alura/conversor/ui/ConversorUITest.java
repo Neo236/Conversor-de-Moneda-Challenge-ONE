@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -119,6 +120,84 @@ class ConversorUITest {
         correrCon("USD\nARS\n10,50\nsalir\n");
 
         verify(servicio).convertir("USD", "ARS", new BigDecimal("10.50"));
+    }
+
+    @Test
+    void rechazaElPuntoComoSeparadorDeMiles() {
+        // "100.000" en es-AR es cien mil; tomarlo como 100 convertiría otro monto en silencio.
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        var texto = correrCon("USD\nARS\n100.000\n100000\nsalir\n");
+
+        assertTrue(texto.contains("separador de miles"));
+        verify(servicio).convertir("USD", "ARS", new BigDecimal("100000"));
+    }
+
+    @Test
+    void aceptaMilesYComaDecimalJuntos() {
+        // Con la coma presente no hay ambigüedad: los puntos son de miles.
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        correrCon("USD\nARS\n1.234,56\nsalir\n");
+
+        verify(servicio).convertir("USD", "ARS", new BigDecimal("1234.56"));
+    }
+
+    @Test
+    void cancelarAbortaLaOperacionSinCerrarLaAplicacion() {
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        var texto = correrCon("USD\nc\nUSD\nARS\n100\nsalir\n");
+
+        assertTrue(texto.contains("Operación cancelada"));
+        assertTrue(texto.contains("Hasta luego"));
+        verify(servicio, times(1)).convertir("USD", "ARS", new BigDecimal("100"));
+    }
+
+    @Test
+    void salirDentroDelHistorialCierraLaAplicacion() {
+        when(historial.obtenerHistorial()).thenReturn(List.of(
+                new RegistroConversion("USD", "ARS", new BigDecimal("1"), new BigDecimal("1010"), "2026-07-01 10:00:00")));
+
+        var texto = correrCon("h\nsalir\n");
+
+        assertTrue(texto.contains("Hasta luego"));
+        verify(servicio, never()).convertir(any(), any(), any());
+    }
+
+    @Test
+    void salirDentroDeLaListaDeMonedasCierraLaAplicacion() {
+        when(servicio.monedasSoportadas()).thenReturn(List.of(new Moneda("USD", "United States Dollar")));
+
+        var texto = correrCon("l\nsalir\n");
+
+        assertTrue(texto.contains("Hasta luego"));
+    }
+
+    @Test
+    void repetirSinConversionesPreviasAvisa() {
+        var texto = correrCon("r\nsalir\n");
+
+        assertTrue(texto.contains("Todavía no hiciste ninguna conversión"));
+        verify(servicio, never()).convertir(any(), any(), any());
+    }
+
+    @Test
+    void repetirRehaceLaUltimaConversion() {
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        correrCon("USD\nARS\n100\nr\nsalir\n");
+
+        verify(servicio, times(2)).convertir("USD", "ARS", new BigDecimal("100"));
+    }
+
+    @Test
+    void invertirConvierteElUltimoResultadoDeVuelta() {
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        correrCon("USD\nARS\n100\ni\nsalir\n");
+
+        verify(servicio).convertir("ARS", "USD", new BigDecimal("101050.00"));
     }
 
     @Test

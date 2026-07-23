@@ -36,8 +36,13 @@ public class Paginador<T> {
         this.coincide = coincide;
     }
 
-    /** Muestra la lista hasta que el usuario elija volver. */
-    public void recorrer(List<T> items) {
+    /**
+     * Muestra la lista hasta que el usuario elija volver.
+     *
+     * @return {@code true} si en vez de volver pidió salir de la aplicación: quien
+     *         llama decide cómo propagar el cierre.
+     */
+    public boolean recorrer(List<T> items) {
         var visibles = items;
         var pagina = 1;
 
@@ -72,7 +77,10 @@ public class Paginador<T> {
                     }
                 }
                 case "v", "volver" -> {
-                    return;
+                    return false;
+                }
+                case "salir" -> {
+                    return true;
                 }
                 default -> consola.error("Comando no reconocido.");
             }
@@ -99,8 +107,8 @@ public class Paginador<T> {
 
     private String pedirComando() {
         var comandos = coincide == null
-                ? "[Comandos: 's' (siguiente) | 'a' (anterior) | 'v' (volver)]"
-                : "[Comandos: 's' (siguiente) | 'a' (anterior) | 'b' (buscar) | 'v' (volver)]";
+                ? "[Comandos: s siguiente | a anterior | v volver | salir]"
+                : "[Comandos: s siguiente | a anterior | b buscar | v volver | salir]";
         consola.aviso(comandos);
         consola.imprimirSinSalto("> ");
         return consola.leerLinea().toLowerCase();
