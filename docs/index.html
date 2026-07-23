@@ -4,13 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#E9E7D6">
-<meta name="description" content="Conversor de Moneda — convertí divisas a la cotización del momento. La app de consola Java corriendo de verdad en el navegador. Challenge Back End · Oracle Next Education (ONE) · Alura Latam.">
+<meta name="description" content="Conversor de Moneda — una sesión del conversor de consola Java reproducida con las tasas del día. Challenge Back End · Oracle Next Education (ONE) · Alura Latam.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Conversor de Moneda · tasa en vivo">
-<meta property="og:description" content="Convertí divisas a la cotización del momento. La app de consola Java corriendo de verdad, sin instalar nada.">
-<meta property="og:image" content="https://neo236.github.io/Conversor-de-Moneda-Challenge-ONE/seal.svg">
+<meta property="og:description" content="Convertí divisas a la cotización del momento: una sesión del conversor reproducida con las tasas del día, sin instalar nada.">
+<meta property="og:image" content="https://neo236.github.io/Conversor-de-Moneda-Challenge-ONE/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<title>Conversor de Moneda · demo en vivo</title>
+<title>Conversor de Moneda · demo · tasas del día</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2246%22 fill=%22%23123B2E%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22none%22 stroke=%22%23E9E7D6%22 stroke-width=%221.5%22/><text x=%2250%22 y=%2265%22 font-size=%2246%22 text-anchor=%22middle%22 fill=%22%238A5A2B%22>&#8644;</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -245,10 +247,10 @@
         </svg>
       </div>
       <h1 class="wordmark">Conversor de Moneda</h1>
-      <p class="tag">Convertí divisas a la cotización del momento. La app de consola corriendo de verdad, con todos sus colores — sin instalar nada.</p>
+      <p class="tag">Una sesión del conversor reproducida con las tasas del día — sin instalar nada.</p>
       <p class="credit">Challenge Back End · Oracle Next Education (ONE) · Alura Latam</p>
       <div class="cta-wrap">
-        <a class="cta" href="#cm-terminal">Mirá una conversión real <span aria-hidden="true">↓</span></a>
+        <a class="cta" href="#cm-terminal">Mirá una conversión con las tasas de hoy <span aria-hidden="true">↓</span></a>
       </div>
     </header>
 
@@ -295,7 +297,7 @@
           </tbody>
         </table>
       </div>
-      <p class="ref-note">tasas del día vía <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate&#8209;API</a> · <span id="ref-upd">actualizando…</span> · así arranca cada conversión de arriba ↑</p>
+      <p class="ref-note">tasas del día · <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates By Exchange Rate API</a> · <span id="ref-upd">actualizando…</span> · así arranca cada conversión de arriba ↑</p>
     </section>
 
     <div class="reed b" aria-hidden="true"></div>
@@ -322,12 +324,19 @@
       serial.textContent = 'AR ' + dd + '·' + mm + d.getFullYear() + ' C';
     }
 
-    // Cotizaciones en vivo vía endpoint keyless. Una sola promesa alimenta la tabla de
-    // referencia Y la sesión animada: los dos hablan de la misma respuesta HTTP, así que
-    // no pueden divergir entre sí. Los números van en es-AR, igual que la app.
+    // Cotizaciones en vivo vía endpoint keyless. Una sola fuente ya resuelta —la
+    // respuesta del día o el respaldo— alimenta la tabla de referencia Y la sesión
+    // animada: por construcción no pueden divergir. Números en es-AR, igual que la app.
     var nfM = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     var nfR = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
     var nf4 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+
+    // Tasas de respaldo frente a USD (23-jul-2026): solo se ven si open.er-api.com no
+    // responde a tiempo, y en ese caso las usan la tabla Y la sesión, con aviso honesto.
+    var FB = {
+      fecha: '23-jul',
+      rates: { ARS: 1480.8616, BRL: 5.067992, EUR: 0.876364, GBP: 0.74772 }
+    };
 
     var ratesPromise = fetch('https://open.er-api.com/v6/latest/USD')
       .then(function (r) { return r.json(); })
@@ -335,44 +344,29 @@
         if (!d || d.result !== 'success' || !d.rates) throw 0;
         return d;
       });
+    ratesPromise.catch(function () {});  // si pierde la carrera, que no quede sin manejar
 
     function put(id, val, big) {
       var el = document.getElementById(id);
       if (el && isFinite(val)) { el.textContent = (big ? nfM : nf4).format(val); el.style.opacity = '1'; }
     }
-    ratesPromise
-      .then(function (d) {
-        var R = d.rates;
-        put('r-usdars', R.ARS, true);
-        put('r-eurusd', 1 / R.EUR, false);
-        put('r-brlars', R.ARS / R.BRL, true);
-        put('r-gbpeur', R.EUR / R.GBP, false);
-        var upd = document.getElementById('ref-upd');
-        if (upd) {
-          var t = d.time_last_update_unix ? new Date(d.time_last_update_unix * 1000) : null;
-          upd.textContent = t ? ('actualizado ' + t.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })) : 'actualizado hoy';
-        }
-      })
-      .catch(function () {
-        ['r-usdars', 'r-eurusd', 'r-brlars', 'r-gbpeur'].forEach(function (id) {
-          var el = document.getElementById(id);
-          if (el) { el.textContent = 's/d'; el.style.opacity = '.6'; }
-        });
-        var upd = document.getElementById('ref-upd');
-        if (upd) upd.textContent = 'cotizaciones no disponibles ahora';
-      });
+    function pintarTabla(R) {
+      put('r-usdars', R.ARS, true);
+      put('r-eurusd', 1 / R.EUR, false);
+      put('r-brlars', R.ARS / R.BRL, true);
+      put('r-gbpeur', R.EUR / R.GBP, false);
+    }
 
     // --- Sesión de terminal: los montos tipeados son fijos (250 USD, 100 EUR); tasa,
-    // resultados y fechas del historial se calculan de la respuesta de arriba. ---
+    // resultados y fechas del historial se calculan de la misma fuente que la tabla. ---
     var term = document.getElementById('term');
     var COL = { C: '#66d9e8', G: '#8ce99a', Y: '#ffd43b', B: '#74c0fc', D: '#c9d1d9', prompt: '#8b949e', typed: '#f0f6fc' };
     var C = 'C', G = 'G', Y = 'Y', B = 'B', D = 'D';
     var SEP = '---------------------------------------------------';
     var HINT = '[Comandos: l lista | h historial | r repetir | i invertir | c cancelar | salir]';
     var HINT_PAG = '[Comandos: s siguiente | a anterior | v volver | salir]';
-
-    // Tasas de respaldo (23-07-2026): solo se ven si open.er-api.com no responde.
-    var FB = { usdBrl: 5.067992, eurArs: 1689.779133 };
+    var PROMPT_ORIGEN = [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']];
+    var PROMPT_DESTINO = [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']];
 
     function ts(d) {
       function p(n) { return String(n).padStart(2, '0'); }
@@ -381,11 +375,12 @@
     }
     // Espejo del formato Java "  [%s] %12s %s -> %14s %s" del historial.
     function linHistorial(fecha, cant, base, res, obj) {
-      return '  [' + fecha + '] ' + nfM.format(cant).padStart(12) + ' ' + base
-        + ' -> ' + nfM.format(res).padStart(14) + ' ' + obj;
+      return '  [' + fecha + '] ' + nfR.format(cant).padStart(12) + ' ' + base
+        + ' -> ' + nfR.format(res).padStart(14) + ' ' + obj;
     }
 
     function buildSES(fx) {
+      // Como la app: el resultado es el producto exacto y el display lo recorta (2 a 6 decimales).
       var res1 = 250 * fx.usdBrl;
       var res2 = 100 * fx.eurArs;
       var t2 = ts(fx.ahora);
@@ -395,36 +390,46 @@
         { o: [[G, '       Bienvenido al Conversor de Moneda =)']] },
         { o: [[C, '***************************************************']] },
         { gap: 1 },
-        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { o: PROMPT_ORIGEN },
         { o: [[Y, HINT]] },
         { in: 'USD' },
-        { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
+        { gap: 1 },
+        { o: PROMPT_DESTINO },
         { o: [[Y, HINT]] },
         { in: 'BRL' },
+        { gap: 1 },
         { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
         { o: [[Y, HINT]] },
         { in: '250' },
         { pause: 650 },
+        { gap: 1 },
         { o: [[C, 'Procesando conversión...']] },
         { o: [[C, SEP]] },
         { o: [[Y, 'Tasa actual: 1 USD = ' + nfR.format(fx.usdBrl) + ' BRL']] },
-        { o: [[G, 'RESULTADO: ' + nfM.format(250) + ' [USD] equivale a =>>> ' + nfM.format(res1) + ' [BRL]']] },
+        { o: [[G, 'RESULTADO: ' + nfR.format(250) + ' [USD] equivale a =>>> ' + nfR.format(res1) + ' [BRL]']] },
         { o: [[C, SEP]] },
         { gap: 1 },
-        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { o: PROMPT_ORIGEN },
+        { o: [[Y, HINT]] },
         { in: 'EUR' },
-        { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
+        { gap: 1 },
+        { o: PROMPT_DESTINO },
+        { o: [[Y, HINT]] },
         { in: 'ARS' },
+        { gap: 1 },
         { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
+        { o: [[Y, HINT]] },
         { in: '100' },
         { pause: 650 },
+        { gap: 1 },
         { o: [[C, 'Procesando conversión...']] },
         { o: [[C, SEP]] },
         { o: [[Y, 'Tasa actual: 1 EUR = ' + nfR.format(fx.eurArs) + ' ARS']] },
-        { o: [[G, 'RESULTADO: ' + nfM.format(100) + ' [EUR] equivale a =>>> ' + nfM.format(res2) + ' [ARS]']] },
+        { o: [[G, 'RESULTADO: ' + nfR.format(100) + ' [EUR] equivale a =>>> ' + nfR.format(res2) + ' [ARS]']] },
         { o: [[C, SEP]] },
         { gap: 1 },
-        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { o: PROMPT_ORIGEN },
+        { o: [[Y, HINT]] },
         { in: 'h' },
         { gap: 1 },
         { o: [[C, '===================================================']] },
@@ -440,7 +445,8 @@
         { gap: 1 },
         { o: [[C, '--- Volviendo a la operación actual ---']] },
         { gap: 1 },
-        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { o: PROMPT_ORIGEN },
+        { o: [[Y, HINT]] },
         { in: 'salir' },
         { gap: 1 },
         { o: [[G, 'Cerrando sistema... ¡Hasta luego!']] }
@@ -504,8 +510,8 @@
       scrollDown();
     }
 
-    // Antes de arrancar se espera (con tope) la misma respuesta que llena la tabla:
-    // si llega, la sesión sale con las tasas del día; si no, con las de respaldo.
+    // La carrera decide UNA vez —tasas del día o respaldo— y con ese único resultado
+    // se pintan la tabla y la sesión: no existe camino donde muestren cosas distintas.
     // El modo estático (prefers-reduced-motion) queda en vivo por el mismo camino.
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var tope = delay(2500).then(function () { throw 0; });
@@ -513,12 +519,22 @@
     Promise.race([ratesPromise, tope])
       .then(function (d) {
         var R = d.rates;
-        if (!isFinite(R.BRL) || !isFinite(R.ARS) || !isFinite(R.EUR)) throw 0;
-        return { usdBrl: R.BRL, eurArs: R.ARS / R.EUR, ahora: new Date() };
+        if (!isFinite(R.BRL) || !isFinite(R.ARS) || !isFinite(R.EUR) || !isFinite(R.GBP)) throw 0;
+        return { rates: R, vivo: true, unix: d.time_last_update_unix };
       })
-      .catch(function () { return { usdBrl: FB.usdBrl, eurArs: FB.eurArs, ahora: new Date() }; })
-      .then(function (fx) {
-        SES = buildSES(fx);
+      .catch(function () { return { rates: FB.rates, vivo: false, unix: null }; })
+      .then(function (src) {
+        pintarTabla(src.rates);
+        var upd = document.getElementById('ref-upd');
+        if (upd) {
+          if (src.vivo) {
+            var t = src.unix ? new Date(src.unix * 1000) : null;
+            upd.textContent = t ? ('actualizado ' + t.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })) : 'actualizado hoy';
+          } else {
+            upd.textContent = 'referencia del ' + FB.fecha + ', sin conexión';
+          }
+        }
+        SES = buildSES({ usdBrl: src.rates.BRL, eurArs: src.rates.ARS / src.rates.EUR, ahora: new Date() });
         if (reduce) renderStatic(); else play();
       });
   })();
