@@ -34,7 +34,7 @@ public class ConversorUI {
 
     public void iniciar() {
         consola.titulo("***************************************************");
-        consola.exito("Bienvenido al Conversor de Moneda V2 =)");
+        consola.exito("Bienvenido al Conversor de Moneda =)");
         consola.titulo("***************************************************");
 
         try {
