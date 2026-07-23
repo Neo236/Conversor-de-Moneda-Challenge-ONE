@@ -100,7 +100,7 @@ Para armar una distribución con su script de arranque: `./gradlew installDist` 
 ./gradlew test
 ```
 
-75 tests, sin tocar la red: el `HttpClient` entra por constructor, así que las respuestas de
+76 tests, sin tocar la red: el `HttpClient` entra por constructor, así que las respuestas de
 la API están simuladas, y la interfaz se ejercita con un teclado y una salida de mentira.
 
 ## Estructura

@@ -29,9 +29,10 @@ public class ConversorUI {
 
     // "100.000" en es-AR es cien mil: tomar el punto como decimal convertiría otro monto
     // en silencio. Con coma decimal presente ("1.234,56") los puntos son de miles y se
-    // pueden sacar sin dudas; sin ella, mejor pedir el monto de nuevo.
-    private static final Pattern MILES_Y_COMA = Pattern.compile("\\d{1,3}(\\.\\d{3})+,\\d+");
-    private static final Pattern SOLO_MILES = Pattern.compile("\\d{1,3}(\\.\\d{3})+");
+    // pueden sacar sin dudas; sin ella, mejor pedir el monto de nuevo. El primer grupo
+    // no puede arrancar con 0: "0.132" es un decimal, no un separador de miles.
+    private static final Pattern MILES_Y_COMA = Pattern.compile("[1-9]\\d{0,2}(\\.\\d{3})+,\\d+");
+    private static final Pattern SOLO_MILES = Pattern.compile("[1-9]\\d{0,2}(\\.\\d{3})+");
 
     // Los montos se MUESTRAN como se leen en es-AR (101.050,00); lo que viaja a la API y
     // lo que se persiste sigue siendo el BigDecimal crudo, que no tiene ambigüedad.

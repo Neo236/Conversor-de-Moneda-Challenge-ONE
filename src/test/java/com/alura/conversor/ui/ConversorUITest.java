@@ -145,6 +145,16 @@ class ConversorUITest {
     }
 
     @Test
+    void unDecimalConCeroALaIzquierdaNoEsSeparadorDeMiles() {
+        // "0.132" siempre fue un decimal válido: ningún monto de miles arranca con 0.
+        when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
+
+        correrCon("USD\nARS\n0.132\nsalir\n");
+
+        verify(servicio).convertir("USD", "ARS", new BigDecimal("0.132"));
+    }
+
+    @Test
     void cancelarAbortaLaOperacionSinCerrarLaAplicacion() {
         when(servicio.convertir(any(), any(), any())).thenReturn(conversionExitosa());
 
