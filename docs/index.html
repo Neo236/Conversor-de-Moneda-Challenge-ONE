@@ -258,7 +258,7 @@
       <div class="term-head">
         <span>Sesión · conversor</span>
         <span class="reed-h" aria-hidden="true"></span>
-        <span class="side">reproducción de sesión real</span>
+        <span class="side">sesión de demo · tasas del día</span>
       </div>
       <div class="mat">
         <span class="mark tl" aria-hidden="true"></span>
@@ -273,7 +273,7 @@
             <span class="name">conversor — bash</span>
             <span class="badge"><span class="live" aria-hidden="true"></span>demo</span>
           </div>
-          <div class="cm-term" id="term" role="img" aria-label="Reproducción de una sesión real del Conversor de Moneda: dos conversiones (250 dólares a reales y 100 euros a pesos argentinos), el historial y la salida del programa."></div>
+          <div class="cm-term" id="term" role="img" aria-label="Sesión de demo del Conversor de Moneda con las tasas del día: dos conversiones (250 dólares a reales y 100 euros a pesos argentinos), el historial y la salida del programa."></div>
         </div>
       </div>
     </section>
@@ -305,7 +305,7 @@
         <a href="https://openjdk.org/projects/jdk/21/" target="_blank" rel="noopener">[ Java&nbsp;21 ]</a>
         <a href="https://gradle.org" target="_blank" rel="noopener">[ Gradle ]</a>
         <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">[ ExchangeRate&#8209;API ]</a>
-        <a href="https://github.com/tsl0922/ttyd" target="_blank" rel="noopener">[ Docker&nbsp;·&nbsp;ttyd ]</a>
+        <a href="https://github.com/Neo236/Conversor-de-Moneda-Challenge-ONE/blob/main/Dockerfile" target="_blank" rel="noopener">[ Docker ]</a>
       </div>
       <p class="repo"><a href="https://github.com/Neo236/Conversor-de-Moneda-Challenge-ONE" target="_blank" rel="noopener">Código en GitHub ↗</a></p>
     </footer>
@@ -322,17 +322,26 @@
       serial.textContent = 'AR ' + dd + '·' + mm + d.getFullYear() + ' C';
     }
 
-    // Cotizaciones de referencia en vivo vía endpoint keyless (con degradación a s/d).
-    var nf2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    var nf4 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-    function put(id, val, big) {
-      var el = document.getElementById(id);
-      if (el && isFinite(val)) { el.textContent = (big ? nf2 : nf4).format(val); el.style.opacity = '1'; }
-    }
-    fetch('https://open.er-api.com/v6/latest/USD')
+    // Cotizaciones en vivo vía endpoint keyless. Una sola promesa alimenta la tabla de
+    // referencia Y la sesión animada: los dos hablan de la misma respuesta HTTP, así que
+    // no pueden divergir entre sí. Los números van en es-AR, igual que la app.
+    var nfM = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var nfR = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+    var nf4 = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+
+    var ratesPromise = fetch('https://open.er-api.com/v6/latest/USD')
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d || d.result !== 'success' || !d.rates) throw 0;
+        return d;
+      });
+
+    function put(id, val, big) {
+      var el = document.getElementById(id);
+      if (el && isFinite(val)) { el.textContent = (big ? nfM : nf4).format(val); el.style.opacity = '1'; }
+    }
+    ratesPromise
+      .then(function (d) {
         var R = d.rates;
         put('r-usdars', R.ARS, true);
         put('r-eurusd', 1 / R.EUR, false);
@@ -353,65 +362,92 @@
         if (upd) upd.textContent = 'cotizaciones no disponibles ahora';
       });
 
-    // --- Reproducción de la sesión de terminal ---
+    // --- Sesión de terminal: los montos tipeados son fijos (250 USD, 100 EUR); tasa,
+    // resultados y fechas del historial se calculan de la respuesta de arriba. ---
     var term = document.getElementById('term');
     var COL = { C: '#66d9e8', G: '#8ce99a', Y: '#ffd43b', B: '#74c0fc', D: '#c9d1d9', prompt: '#8b949e', typed: '#f0f6fc' };
     var C = 'C', G = 'G', Y = 'Y', B = 'B', D = 'D';
-    var SES = [
-      { o: [[C, '***************************************************']] },
-      { o: [[G, 'Bienvenido al Conversor de Moneda V2 =)']] },
-      { o: [[C, '***************************************************']] },
-      { gap: 1 },
-      { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
-      { o: [[Y, "[Comandos: 'l' (lista) | 'h' (historial) | 'salir']"]] },
-      { in: 'USD' },
-      { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
-      { o: [[Y, "[Comandos: 'l' (lista) | 'h' (historial) | 'salir']"]] },
-      { in: 'BRL' },
-      { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
-      { o: [[Y, "[Comandos: 'l' (lista) | 'h' (historial) | 'salir']"]] },
-      { in: '250' },
-      { pause: 650 },
-      { o: [[C, 'Procesando conversión...']] },
-      { o: [[C, '---------------------------------------------------']] },
-      { o: [[Y, 'Tasa actual: 1 USD = 5.0766 BRL']] },
-      { o: [[G, 'RESULTADO: 250 [USD] equivale a =>>> 1269.15 [BRL]']] },
-      { o: [[C, '---------------------------------------------------']] },
-      { gap: 1 },
-      { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
-      { in: 'EUR' },
-      { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
-      { in: 'ARS' },
-      { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
-      { in: '100' },
-      { pause: 650 },
-      { o: [[C, 'Procesando conversión...']] },
-      { o: [[C, '---------------------------------------------------']] },
-      { o: [[Y, 'Tasa actual: 1 EUR = 1689.1870 ARS']] },
-      { o: [[G, 'RESULTADO: 100 [EUR] equivale a =>>> 168918.7 [ARS]']] },
-      { o: [[C, '---------------------------------------------------']] },
-      { gap: 1 },
-      { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
-      { in: 'h' },
-      { gap: 1 },
-      { o: [[C, '===================================================']] },
-      { o: [[Y, '                HISTORIAL DE CONVERSIONES']] },
-      { o: [[C, '===================================================']] },
-      { o: [[D, '  [2026-07-16 15:48:53] 100 EUR -> 168918.7 ARS']] },
-      { o: [[D, '  [2026-07-16 15:48:52] 250 USD -> 1269.15 BRL']] },
-      { o: [[C, '---------------------------------------------------']] },
-      { o: [[G, '               Página 1 de 1']] },
-      { o: [[C, '---------------------------------------------------']] },
-      { o: [[Y, "[Comandos: 's' (siguiente) | 'a' (anterior) | 'v' (volver)]"]] },
-      { in: 'v' },
-      { gap: 1 },
-      { o: [[C, '--- Volviendo a la operación actual ---']] },
-      { gap: 1 },
-      { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
-      { in: 'salir' },
-      { gap: 1 },
-      { o: [[G, 'Cerrando sistema... ¡Hasta luego!']] }
-    ];
+    var SEP = '---------------------------------------------------';
+    var HINT = '[Comandos: l lista | h historial | r repetir | i invertir | c cancelar | salir]';
+    var HINT_PAG = '[Comandos: s siguiente | a anterior | v volver | salir]';
+
+    // Tasas de respaldo (23-07-2026): solo se ven si open.er-api.com no responde.
+    var FB = { usdBrl: 5.067992, eurArs: 1689.779133 };
+
+    function ts(d) {
+      function p(n) { return String(n).padStart(2, '0'); }
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' '
+        + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+    }
+    // Espejo del formato Java "  [%s] %12s %s -> %14s %s" del historial.
+    function linHistorial(fecha, cant, base, res, obj) {
+      return '  [' + fecha + '] ' + nfM.format(cant).padStart(12) + ' ' + base
+        + ' -> ' + nfM.format(res).padStart(14) + ' ' + obj;
+    }
+
+    function buildSES(fx) {
+      var res1 = 250 * fx.usdBrl;
+      var res2 = 100 * fx.eurArs;
+      var t2 = ts(fx.ahora);
+      var t1 = ts(new Date(fx.ahora.getTime() - 1000));
+      return [
+        { o: [[C, '***************************************************']] },
+        { o: [[G, '       Bienvenido al Conversor de Moneda =)']] },
+        { o: [[C, '***************************************************']] },
+        { gap: 1 },
+        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { o: [[Y, HINT]] },
+        { in: 'USD' },
+        { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
+        { o: [[Y, HINT]] },
+        { in: 'BRL' },
+        { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
+        { o: [[Y, HINT]] },
+        { in: '250' },
+        { pause: 650 },
+        { o: [[C, 'Procesando conversión...']] },
+        { o: [[C, SEP]] },
+        { o: [[Y, 'Tasa actual: 1 USD = ' + nfR.format(fx.usdBrl) + ' BRL']] },
+        { o: [[G, 'RESULTADO: ' + nfM.format(250) + ' [USD] equivale a =>>> ' + nfM.format(res1) + ' [BRL]']] },
+        { o: [[C, SEP]] },
+        { gap: 1 },
+        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { in: 'EUR' },
+        { o: [[D, '¿A qué moneda querés '], [B, 'CONVERTIR'], [D, '? (ej. ARS, COP):']] },
+        { in: 'ARS' },
+        { o: [[D, 'Ingresá la CANTIDAD a convertir:']] },
+        { in: '100' },
+        { pause: 650 },
+        { o: [[C, 'Procesando conversión...']] },
+        { o: [[C, SEP]] },
+        { o: [[Y, 'Tasa actual: 1 EUR = ' + nfR.format(fx.eurArs) + ' ARS']] },
+        { o: [[G, 'RESULTADO: ' + nfM.format(100) + ' [EUR] equivale a =>>> ' + nfM.format(res2) + ' [ARS]']] },
+        { o: [[C, SEP]] },
+        { gap: 1 },
+        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { in: 'h' },
+        { gap: 1 },
+        { o: [[C, '===================================================']] },
+        { o: [[Y, '             HISTORIAL DE CONVERSIONES']] },
+        { o: [[C, '===================================================']] },
+        { o: [[D, linHistorial(t2, 100, 'EUR', res2, 'ARS')]] },
+        { o: [[D, linHistorial(t1, 250, 'USD', res1, 'BRL')]] },
+        { o: [[C, SEP]] },
+        { o: [[G, '                   Página 1 de 1']] },
+        { o: [[C, SEP]] },
+        { o: [[Y, HINT_PAG]] },
+        { in: 'v' },
+        { gap: 1 },
+        { o: [[C, '--- Volviendo a la operación actual ---']] },
+        { gap: 1 },
+        { o: [[D, 'Elegí la moneda de '], [B, 'ORIGEN'], [D, ' (código de 3 letras, ej. USD):']] },
+        { in: 'salir' },
+        { gap: 1 },
+        { o: [[G, 'Cerrando sistema... ¡Hasta luego!']] }
+      ];
+    }
+
+    var SES = [];
 
     function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     function makeLine() { var d = document.createElement('div'); d.className = 'ln'; term.appendChild(d); return d; }
@@ -468,8 +504,23 @@
       scrollDown();
     }
 
+    // Antes de arrancar se espera (con tope) la misma respuesta que llena la tabla:
+    // si llega, la sesión sale con las tasas del día; si no, con las de respaldo.
+    // El modo estático (prefers-reduced-motion) queda en vivo por el mismo camino.
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) renderStatic(); else play();
+    var tope = delay(2500).then(function () { throw 0; });
+    tope.catch(function () {});  // el perdedor de la carrera no debe quedar sin manejar
+    Promise.race([ratesPromise, tope])
+      .then(function (d) {
+        var R = d.rates;
+        if (!isFinite(R.BRL) || !isFinite(R.ARS) || !isFinite(R.EUR)) throw 0;
+        return { usdBrl: R.BRL, eurArs: R.ARS / R.EUR, ahora: new Date() };
+      })
+      .catch(function () { return { usdBrl: FB.usdBrl, eurArs: FB.eurArs, ahora: new Date() }; })
+      .then(function (fx) {
+        SES = buildSES(fx);
+        if (reduce) renderStatic(); else play();
+      });
   })();
   </script>
 </body>
